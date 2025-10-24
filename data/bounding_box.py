@@ -6,8 +6,8 @@ import os
 import random
 
 # === Paths ===
-json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/repo/bone-tumour-classification/BTXRD/Annotations"
-image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/repo/bone-tumour-classification/BTXRD/images"
+json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/Annotations"
+image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/images"
 
 
 # === Collect all JSON files ===
