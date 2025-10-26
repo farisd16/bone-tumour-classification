@@ -5,6 +5,15 @@ import matplotlib.pyplot as plt
 import os
 import random
 
+"""
+BTXRD Bounding Box Extractor
+
+This script reads LabelMe-style JSON annotations from the BTXRD dataset,
+computes bounding boxes (with a 10% margin), and saves cropped image patches
+to the output folder and created the bounding box based dataset for later use in classification or training.
+
+"""
+
 
 # === Paths ===
 json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"

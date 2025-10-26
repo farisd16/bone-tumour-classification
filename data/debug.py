@@ -17,7 +17,7 @@ random_patched_image_files = sample(patched_image_files,20)
 # === Iterate over first 10 images ===
 for i, image_file in enumerate(random_patched_image_files):
     if i == 20:
-        break
+        breakt
 
     path_patched = os.path.join(patched_images_folder, image_file)
     original_path = os.path.join(original_image_folder, image_file)
