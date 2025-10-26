@@ -4,3 +4,4 @@ venv/
 
 # Ignore dataset
 data/BTXRD/
+data/patched_BTXRD/
