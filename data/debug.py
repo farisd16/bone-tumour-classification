@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import random
+from random import sample
 
 # === Paths ===
 original_image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
@@ -12,10 +12,10 @@ json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classi
 
 # === Collect all patched images ===
 patched_image_files = [f for f in os.listdir(patched_images_folder) if f.endswith(".jpeg")]
-patched_image_files.sort()
+random_patched_image_files = sample(patched_image_files,20)
 
 # === Iterate over first 10 images ===
-for i, image_file in enumerate(patched_image_files):
+for i, image_file in enumerate(random_patched_image_files):
     if i == 20:
         break
 

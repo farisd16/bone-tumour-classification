@@ -69,7 +69,6 @@ for json_name in json_files:
         patch_filename = os.path.join(output_folder,image_name)
         cv2.imwrite(patch_filename,patch)
 
-
     else:
         all_pts = []
 
