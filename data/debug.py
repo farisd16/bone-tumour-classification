@@ -6,9 +6,13 @@ import os
 from random import sample
 
 # === Paths ===
-original_image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
-patched_images_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/patched_BTXRD"
-json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
+#original_image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
+#patched_images_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/patched_BTXRD"
+#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
+base_dir = os.path.dirname(__file__)
+original_image_folder = os.path.join(base_dir, "BTXRD", "images")
+patched_images_folder = os.path.join(base_dir, "patched_BTXRD")
+json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 
 # === Collect all patched images ===
 patched_image_files = [f for f in os.listdir(patched_images_folder) if f.endswith(".jpeg")]

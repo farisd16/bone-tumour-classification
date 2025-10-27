@@ -18,9 +18,11 @@ and displays one example per tumour class.
 
 
 # === Paths ===
-json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
-image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
-
+#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
+#image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
+base_dir = os.path.dirname(__file__)
+json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
+image_folder = os.path.join(base_dir, "BTXRD", "images")
 
 # === Collect all JSON files ===
 json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]

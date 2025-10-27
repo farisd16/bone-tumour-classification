@@ -16,8 +16,11 @@ to the output folder and created the bounding box based dataset for later use in
 
 
 # === Paths ===
-json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
-image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
+#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
+#image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
+base_dir = os.path.dirname(__file__)
+json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
+image_folder = os.path.join(base_dir, "BTXRD", "images")
 output_folder = "patched_BTXRD"
 
 os.makedirs(output_folder, exist_ok=True)
