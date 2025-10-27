@@ -16,8 +16,6 @@ to the output folder and created the bounding box based dataset for later use in
 
 
 # === Paths ===
-#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
-#image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
 base_dir = os.path.dirname(__file__)
 json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 image_folder = os.path.join(base_dir, "BTXRD", "images")
@@ -30,7 +28,15 @@ json_files.sort()
 image_files = [a for a in os.listdir(image_folder) if a.endswith(".jpeg")]
 image_files.sort()
 
-classes = ["osteochondroma", "osteosarcoma", "multiple osteochondromas", "simple bone cyst", "giant cell tumor", "synovial osteochondroma", "osteofibroma"]
+classes = [
+    "osteochondroma",
+    "osteosarcoma",
+    "multiple osteochondromas",
+    "simple bone cyst",
+    "giant cell tumor",
+    "synovial osteochondroma",
+    "osteofibroma",
+]
 
 # === Loop through dataset ===
 for json_name in json_files:
@@ -76,10 +82,10 @@ for json_name in json_files:
         x2 = min(W, x2)
         y2 = min(H, y2)
 
-        # Extract the patch from the image and save it 
+        # Extract the patch from the image and save it
         patch = image[y1:y2, x1:x2]
-        patch_filename = os.path.join(output_folder,image_name)
-        cv2.imwrite(patch_filename,patch)
+        patch_filename = os.path.join(output_folder, image_name)
+        cv2.imwrite(patch_filename, patch)
 
     else:
         all_pts = []
@@ -107,13 +113,12 @@ for json_name in json_files:
         x2 = min(W, x2)
         y2 = min(H, y2)
 
-        # Extract the patch from the image and save it 
+        # Extract the patch from the image and save it
         patch = image[y1:y2, x1:x2]
-        patch_filename = os.path.join(output_folder,image_name)
-        cv2.imwrite(patch_filename,patch)
+        patch_filename = os.path.join(output_folder, image_name)
+        cv2.imwrite(patch_filename, patch)
 
 
-    
 """"
 
 

@@ -1,2 +1,5 @@
 pandas
 openpyxl
+opencv-python
+matplotlib
+PyQt6

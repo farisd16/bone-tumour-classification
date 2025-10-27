@@ -18,8 +18,6 @@ and displays one example per tumour class.
 
 
 # === Paths ===
-#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
-#image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
 base_dir = os.path.dirname(__file__)
 json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 image_folder = os.path.join(base_dir, "BTXRD", "images")
@@ -28,14 +26,22 @@ image_folder = os.path.join(base_dir, "BTXRD", "images")
 json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]
 
 
-classes = ["osteochondroma", "osteosarcoma", "multiple osteochondromas", "simple bone cyst", "giant cell tumor", "synovial osteochondroma", "osteofibroma"]
+classes = [
+    "osteochondroma",
+    "osteosarcoma",
+    "multiple osteochondromas",
+    "simple bone cyst",
+    "giant cell tumor",
+    "synovial osteochondroma",
+    "osteofibroma",
+]
 
 # === Keep track of which classes we've already shown ===
 shown_classes = set()
 
 # === Collect all JSON files ===
 
-json_files = sample(json_files,100)
+json_files = sample(json_files, 100)
 
 # === Loop through dataset ===
 for json_name in json_files:
@@ -74,7 +80,9 @@ for json_name in json_files:
                     cv2.fillPoly(overlay, [pts], (255, 0, 0, 50))
                 elif s["shape_type"] == "rectangle":
                     (x1, y1), (x2, y2) = pts
-                    cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3)
+                    cv2.rectangle(
+                        overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3
+                    )
 
         # Combine all shapes’ points into one big array
         all_pts = np.concatenate(all_pts, axis=0)
@@ -95,7 +103,9 @@ for json_name in json_files:
                 cv2.fillPoly(overlay, [pts], (255, 0, 0, 50))
             elif shape_type == "rectangle":
                 (x1, y1), (x2, y2) = pts
-                cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3)
+                cv2.rectangle(
+                    overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3
+                )
 
     margin = 0.10
     w, h = x_max - x_min, y_max - y_min
@@ -103,9 +113,9 @@ for json_name in json_files:
     cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2
     x1, y1 = int(cx - size / 2), int(cy - size / 2)
     x2, y2 = int(cx + size / 2), int(cy + size / 2)
-    
+
     # Clipping not to exceed image boundary
-    H, W, _ = overlay.shape  
+    H, W, _ = overlay.shape
     x1 = max(0, x1)
     y1 = max(0, y1)
     x2 = min(W - 1, x2)
@@ -115,8 +125,13 @@ for json_name in json_files:
 
     # Label text
     cv2.putText(
-        overlay, label, (x1, max(0, y1 - 10)),
-        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2
+        overlay,
+        label,
+        (x1, max(0, y1 - 10)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (255, 255, 0),
+        2,
     )
 
     # Blend overlay

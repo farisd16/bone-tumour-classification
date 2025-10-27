@@ -6,22 +6,21 @@ import os
 from random import sample
 
 # === Paths ===
-#original_image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
-#patched_images_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/patched_BTXRD"
-#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
 base_dir = os.path.dirname(__file__)
 original_image_folder = os.path.join(base_dir, "BTXRD", "images")
 patched_images_folder = os.path.join(base_dir, "patched_BTXRD")
 json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 
 # === Collect all patched images ===
-patched_image_files = [f for f in os.listdir(patched_images_folder) if f.endswith(".jpeg")]
-random_patched_image_files = sample(patched_image_files,20)
+patched_image_files = [
+    f for f in os.listdir(patched_images_folder) if f.endswith(".jpeg")
+]
+random_patched_image_files = sample(patched_image_files, 20)
 
 # === Iterate over first 10 images ===
 for i, image_file in enumerate(random_patched_image_files):
     if i == 20:
-        breakt
+        break
 
     path_patched = os.path.join(patched_images_folder, image_file)
     original_path = os.path.join(original_image_folder, image_file)
@@ -53,7 +52,9 @@ for i, image_file in enumerate(random_patched_image_files):
                     cv2.fillPoly(overlay, [pts], (255, 0, 0))
                 elif s["shape_type"] == "rectangle":
                     (x1, y1), (x2, y2) = pts
-                    cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), -1)
+                    cv2.rectangle(
+                        overlay, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), -1
+                    )
 
                 # Blend transparent overlay
                 cv2.addWeighted(overlay, 0.4, orig, 0.6, 0, orig)
@@ -74,10 +75,12 @@ for i, image_file in enumerate(random_patched_image_files):
                 cv2.fillPoly(overlay, [pts], (255, 0, 0))
             elif s["shape_type"] == "rectangle":
                 (x1, y1), (x2, y2) = pts
-                cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), -1)
+                cv2.rectangle(
+                    overlay, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), -1
+                )
 
             cv2.addWeighted(overlay, 0.4, orig, 0.6, 0, orig)
-        
+
         # Combine all shape points to compute bounding box
         all_pts = np.concatenate(all_pts, axis=0)
         x_min, x_max = np.min(all_pts[:, 0]), np.max(all_pts[:, 0])
@@ -108,10 +111,10 @@ for i, image_file in enumerate(random_patched_image_files):
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     axs[0].imshow(orig)
     axs[0].set_title("Original")
-    axs[0].axis('off')
+    axs[0].axis("off")
 
     axs[1].imshow(patched_image)
     axs[1].set_title("Extracted Patch")
-    axs[1].axis('off')
+    axs[1].axis("off")
 
     plt.show()
