@@ -30,13 +30,11 @@ json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]
 
 classes = ["osteochondroma", "osteosarcoma", "multiple osteochondromas", "simple bone cyst", "giant cell tumor", "synovial osteochondroma", "osteofibroma"]
 
-# === Keep track of which classes we've already shown ===
-shown_classes = set()
+i = 0
 
-# === Collect all JSON files ===
+json_files.sort()
 
-json_files = sample(json_files,100)
-
+# diff_list = []  for debugging
 # === Loop through dataset ===
 for json_name in json_files:
     json_path = os.path.join(json_folder, json_name)
@@ -54,48 +52,28 @@ for json_name in json_files:
     if label not in classes:
         continue
 
-    # Skip if we've already shown this class
-    if label in shown_classes:
-        continue
-
     # --- Load and visualize ---
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     overlay = image.copy()
 
-    if label == "multiple osteochondromas":
-        all_pts = []
-        for s in data["shapes"]:
-            if s["label"].lower() == "multiple osteochondromas":
-                pts = np.array(s["points"], np.int32)
-                all_pts.append(pts)
-                if s["shape_type"] == "polygon":
-                    cv2.polylines(overlay, [pts], True, (255, 0, 0), 3)
-                    cv2.fillPoly(overlay, [pts], (255, 0, 0, 50))
-                elif s["shape_type"] == "rectangle":
-                    (x1, y1), (x2, y2) = pts
-                    cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3)
+    # To store all of the tumour points
+    all_pts = []
 
-        # Combine all shapes’ points into one big array
-        all_pts = np.concatenate(all_pts, axis=0)
-        x_min, x_max = np.min(all_pts[:, 0]), np.max(all_pts[:, 0])
-        y_min, y_max = np.min(all_pts[:, 1]), np.max(all_pts[:, 1])
+    for s in data["shapes"]:    
+        pts = np.array(s["points"], np.int32)
+        all_pts.append(pts)
+        if s["shape_type"] == "polygon":
+            cv2.polylines(overlay, [pts], True, (255, 0, 0), 3)
+            cv2.fillPoly(overlay, [pts], (255, 0, 0, 50))
+        elif s["shape_type"] == "rectangle":
+            (x1, y1), (x2, y2) = pts
+            cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3)
 
-    else:
-        # Normal single-shape drawing logic
-        for shape in data["shapes"]:
-            pts = np.array(shape["points"], np.int32)
-            shape_type = shape["shape_type"]
-
-            x_min, x_max = np.min(pts[:, 0]), np.max(pts[:, 0])
-            y_min, y_max = np.min(pts[:, 1]), np.max(pts[:, 1])
-
-            if shape_type == "polygon":
-                cv2.polylines(overlay, [pts], True, (255, 0, 0), 3)
-                cv2.fillPoly(overlay, [pts], (255, 0, 0, 50))
-            elif shape_type == "rectangle":
-                (x1, y1), (x2, y2) = pts
-                cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3)
+    # Combine all shapes’ points into one big array
+    all_pts = np.concatenate(all_pts, axis=0)
+    x_min, x_max = np.min(all_pts[:, 0]), np.max(all_pts[:, 0])
+    y_min, y_max = np.min(all_pts[:, 1]), np.max(all_pts[:, 1])
 
     margin = 0.10
     w, h = x_max - x_min, y_max - y_min
@@ -104,12 +82,53 @@ for json_name in json_files:
     x1, y1 = int(cx - size / 2), int(cy - size / 2)
     x2, y2 = int(cx + size / 2), int(cy + size / 2)
     
-    # Clipping not to exceed image boundary
-    H, W, _ = overlay.shape  
+    H, W, _ = image.shape
+
+    # Clip to image boundaries first
     x1 = max(0, x1)
     y1 = max(0, y1)
-    x2 = min(W - 1, x2)
-    y2 = min(H - 1, y2)
+    x2 = min(W, x2)
+    y2 = min(H, y2)
+
+    # Compute width and height
+    w = x2 - x1
+    h = y2 - y1
+
+    #print(f"Old_{json_name}: {w}, {h}")     for debugging
+
+    # --- Make square by expanding to larger side ---
+    if w != h:
+        side = max(w, h)
+        cx = (x1 + x2) // 2
+        cy = (y1 + y2) // 2
+
+        # Recalculate a centered square
+        x1 = int(cx - side / 2)
+        y1 = int(cy - side / 2)
+        x2 = int(cx + side / 2)
+        y2 = int(cy + side / 2)
+
+        # --- Adjust if box goes beyond image boundaries ---
+        if x1 < 0:
+            x2 -= x1
+            x1 = 0
+        if y1 < 0:
+            y2 -= y1
+            y1 = 0
+        if x2 > W:
+            diff = x2 - W
+            x1 -= diff
+            x2 = W
+        if y2 > H:
+            diff = y2 - H
+            y1 -= diff
+            y2 = H
+
+    
+    #w_new = x2 - x1    for debugging
+    #h_new = y2 - y1    for debugging
+
+   #print(f"New_{json_name}: {w_new}, {h_new}")    for debugging
 
     cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 255, 0), 3)
 
@@ -123,16 +142,23 @@ for json_name in json_files:
     alpha = 0.4
     blended = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
 
-    # Plot
-    plt.figure(figsize=(8, 8))
-    plt.imshow(blended)
-    plt.axis("off")
-    plt.title(f"Class: {label}")
-    plt.show()
 
-    # Mark this class as shown
-    shown_classes.add(label)
+    """
+    for debugging
+    
+    if w_new - h_new != 0:
+        i += 1
+        diff_list.append(w_new - h_new)
+        if w_new - h_new > 5:
+            print(f"Old_{json_name}: {w}, {h}")
+            print(f"New_{json_name}: {w_new}, {h_new}")
+            
+            # Plot
+            plt.figure(figsize=(8, 8))
+            plt.imshow(blended)
+            plt.axis("off")
+            plt.title(f"Class: {label}")
+            plt.show()
+        
+    """    
 
-    # Stop once all classes are shown
-    if shown_classes == set(classes):
-        break
