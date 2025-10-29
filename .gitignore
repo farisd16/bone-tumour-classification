@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 venv/
+.venv
 
 # Ignore dataset
-data/BTXRD/
-data/patched_BTXRD/
+data/*BTXRD/

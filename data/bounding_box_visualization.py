@@ -18,8 +18,6 @@ and displays one example per tumour class.
 
 
 # === Paths ===
-#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
-#image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
 base_dir = os.path.dirname(__file__)
 json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 image_folder = os.path.join(base_dir, "BTXRD", "images")
@@ -28,7 +26,15 @@ image_folder = os.path.join(base_dir, "BTXRD", "images")
 json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]
 
 
-classes = ["osteochondroma", "osteosarcoma", "multiple osteochondromas", "simple bone cyst", "giant cell tumor", "synovial osteochondroma", "osteofibroma"]
+classes = [
+    "osteochondroma",
+    "osteosarcoma",
+    "multiple osteochondromas",
+    "simple bone cyst",
+    "giant cell tumor",
+    "synovial osteochondroma",
+    "osteofibroma",
+]
 
 i = 0
 
@@ -57,6 +63,7 @@ for json_name in json_files:
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     overlay = image.copy()
 
+
     # To store all of the tumour points
     all_pts = []
 
@@ -81,6 +88,7 @@ for json_name in json_files:
     cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2
     x1, y1 = int(cx - size / 2), int(cy - size / 2)
     x2, y2 = int(cx + size / 2), int(cy + size / 2)
+
     
     H, W, _ = image.shape
 
@@ -134,8 +142,13 @@ for json_name in json_files:
 
     # Label text
     cv2.putText(
-        overlay, label, (x1, max(0, y1 - 10)),
-        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2
+        overlay,
+        label,
+        (x1, max(0, y1 - 10)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (255, 255, 0),
+        2,
     )
 
     # Blend overlay
@@ -161,4 +174,3 @@ for json_name in json_files:
             plt.show()
         
     """    
-

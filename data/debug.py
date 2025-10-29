@@ -6,17 +6,16 @@ import os
 from random import sample
 
 # === Paths ===
-#original_image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
-#patched_images_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/patched_BTXRD"
-#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
 base_dir = os.path.dirname(__file__)
 original_image_folder = os.path.join(base_dir, "BTXRD", "images")
 patched_images_folder = os.path.join(base_dir, "patched_BTXRD")
 json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 
 # === Collect all patched images ===
-patched_image_files = [f for f in os.listdir(patched_images_folder) if f.endswith(".jpeg")]
-random_patched_image_files = sample(patched_image_files,20)
+patched_image_files = [
+    f for f in os.listdir(patched_images_folder) if f.endswith(".jpeg")
+]
+random_patched_image_files = sample(patched_image_files, 20)
 
 # === Iterate over first 10 images ===
 for i, image_file in enumerate(random_patched_image_files):
@@ -99,10 +98,10 @@ for i, image_file in enumerate(random_patched_image_files):
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     axs[0].imshow(overlay)
     axs[0].set_title("Original")
-    axs[0].axis('off')
+    axs[0].axis("off")
 
     axs[1].imshow(patched_image)
     axs[1].set_title("Extracted Patch")
-    axs[1].axis('off')
+    axs[1].axis("off")
 
     plt.show()

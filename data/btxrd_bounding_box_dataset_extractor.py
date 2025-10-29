@@ -16,8 +16,6 @@ to the output folder and created the bounding box based dataset for later use in
 
 
 # === Paths ===
-#json_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/Annotations"
-#image_folder = "/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/BTXRD/images"
 base_dir = os.path.dirname(__file__)
 json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 image_folder = os.path.join(base_dir, "BTXRD", "images")
@@ -30,7 +28,15 @@ json_files.sort()
 image_files = [a for a in os.listdir(image_folder) if a.endswith(".jpeg")]
 image_files.sort()
 
-classes = ["osteochondroma", "osteosarcoma", "multiple osteochondromas", "simple bone cyst", "giant cell tumor", "synovial osteochondroma", "osteofibroma"]
+classes = [
+    "osteochondroma",
+    "osteosarcoma",
+    "multiple osteochondromas",
+    "simple bone cyst",
+    "giant cell tumor",
+    "synovial osteochondroma",
+    "osteofibroma",
+]
 
 # === Loop through dataset ===
 for json_name in json_files:
@@ -120,4 +126,3 @@ for json_name in json_files:
 
     
 
-    
