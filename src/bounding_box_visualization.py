@@ -18,9 +18,10 @@ and displays one example per tumour class.
 
 
 # === Paths ===
-base_dir = os.path.dirname(__file__)
-json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
-image_folder = os.path.join(base_dir, "BTXRD", "images")
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dataset_dir = os.path.join(project_root, "data", "BTXRD")
+json_folder = os.path.join(dataset_dir, "Annotations")
+image_folder = os.path.join(dataset_dir, "images")
 
 # === Collect all JSON files ===
 json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]

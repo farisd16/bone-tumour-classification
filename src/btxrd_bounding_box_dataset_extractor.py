@@ -16,10 +16,11 @@ to the output folder and created the bounding box based dataset for later use in
 
 
 # === Paths ===
-base_dir = os.path.dirname(__file__)
-json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
-image_folder = os.path.join(base_dir, "BTXRD", "images")
-output_folder = "patched_BTXRD"
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dataset_dir = os.path.join(project_root, "data", "BTXRD")
+json_folder = os.path.join(dataset_dir, "Annotations")
+image_folder = os.path.join(dataset_dir, "images")
+output_folder = os.path.join(project_root, "data", "patched_BTXRD")
 
 os.makedirs(output_folder, exist_ok=True)
 

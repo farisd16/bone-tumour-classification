@@ -6,10 +6,11 @@ import os
 from random import sample
 
 # === Paths ===
-base_dir = os.path.dirname(__file__)
-original_image_folder = os.path.join(base_dir, "BTXRD", "images")
-patched_images_folder = os.path.join(base_dir, "patched_BTXRD")
-json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dataset_dir = os.path.join(project_root, "data", "BTXRD")
+original_image_folder = os.path.join(dataset_dir, "images")
+patched_images_folder = os.path.join(project_root, "data", "patched_BTXRD")
+json_folder = os.path.join(dataset_dir, "Annotations")
 
 # === Collect all patched images ===
 patched_image_files = [
