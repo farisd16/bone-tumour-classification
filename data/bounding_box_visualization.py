@@ -40,9 +40,10 @@ i = 0
 
 json_files.sort()
 
-# diff_list = []  for debugging
+diff_list = []  
 # === Loop through dataset ===
 for json_name in json_files:
+    #json_name = "IMG001707.json"
     json_path = os.path.join(json_folder, json_name)
     image_name = json_name.replace(".json", ".jpeg")
     image_path = os.path.join(image_folder, image_name)
@@ -132,9 +133,9 @@ for json_name in json_files:
             y1 -= diff
             y2 = H
 
-    
-    #w_new = x2 - x1    for debugging
-    #h_new = y2 - y1    for debugging
+
+    w_new = x2 - x1    
+    h_new = y2 - y1    
 
    #print(f"New_{json_name}: {w_new}, {h_new}")    for debugging
 
@@ -156,9 +157,7 @@ for json_name in json_files:
     blended = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
 
 
-    """
-    for debugging
-    
+
     if w_new - h_new != 0:
         i += 1
         diff_list.append(w_new - h_new)
@@ -172,5 +171,7 @@ for json_name in json_files:
             plt.axis("off")
             plt.title(f"Class: {label}")
             plt.show()
-        
-    """    
+                
+
+print(i)
+print(diff_list)

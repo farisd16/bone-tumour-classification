@@ -1,32 +1,28 @@
 import json
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 import os
-import random
 
 """
-BTXRD Bounding Box Extractor
-
-This script reads LabelMe-style JSON annotations from the BTXRD dataset,
-computes bounding boxes (with a 10% margin), and saves cropped image patches
-to the output folder and created the bounding box based dataset for later use in classification or training.
-
+BTXRD Bounding Box Extractor (exact visualizer-equivalent)
+-----------------------------------------------------------
+This version uses *identical logic* to your visualization script.
+That means:
+- Integer-based center (truncated, not rounded)
+- Same sequence of operations (margin → clip → make-square → adjust)
+- Produces bounding boxes whose w/h stats exactly match your ±1 results
 """
-
 
 # === Paths ===
 base_dir = os.path.dirname(__file__)
 json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 image_folder = os.path.join(base_dir, "BTXRD", "images")
-output_folder = "patched_BTXRD"
+output_folder = os.path.join(base_dir, "patched_BTXRD")
 
 os.makedirs(output_folder, exist_ok=True)
 
-json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]
-json_files.sort()
-image_files = [a for a in os.listdir(image_folder) if a.endswith(".jpeg")]
-image_files.sort()
+# === Collect JSON files ===
+json_files = sorted([f for f in os.listdir(json_folder) if f.endswith(".json")])
 
 classes = [
     "osteochondroma",
@@ -44,52 +40,48 @@ for json_name in json_files:
     image_name = json_name.replace(".json", ".jpeg")
     image_path = os.path.join(image_folder, image_name)
 
-    # Load JSON
+    # --- Load JSON and image ---
     with open(json_path, "r") as f:
         data = json.load(f)
+    image = cv2.imread(image_path)
+    if image is None:
+        print(f"⚠️ Could not load image: {image_name}")
+        continue
 
-    # Get label from first shape
     label = data["shapes"][0]["label"].lower()
-
-    # Skip if label not in target classes
     if label not in classes:
         continue
 
-    # --- Load and visualize ---
-    image = cv2.imread(image_path)
-
-    
+    # --- Collect all tumour points ---
     all_pts = []
     for s in data["shapes"]:
         pts = np.array(s["points"], np.int32)
         all_pts.append(pts)
 
- 
-    # Combine all shapes’ points into one big array
     all_pts = np.concatenate(all_pts, axis=0)
     x_min, x_max = np.min(all_pts[:, 0]), np.max(all_pts[:, 0])
     y_min, y_max = np.min(all_pts[:, 1]), np.max(all_pts[:, 1])
 
+    # --- Initial box with 10% margin (IDENTICAL to visualizer) ---
     margin = 0.10
     w, h = x_max - x_min, y_max - y_min
     size = max(w, h) * (1 + margin)
-    cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2
+    cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2  # <-- float, but truncated later
+
     x1, y1 = int(cx - size / 2), int(cy - size / 2)
     x2, y2 = int(cx + size / 2), int(cy + size / 2)
-    
+
     H, W, _ = image.shape
 
-    # Clip to image boundaries first
+    # --- Clip to image boundaries first (IDENTICAL) ---
     x1 = max(0, x1)
     y1 = max(0, y1)
     x2 = min(W, x2)
     y2 = min(H, y2)
 
-    # Compute width and height
+    # --- Compute new width & height ---
     w = x2 - x1
     h = y2 - y1
-
-    #print(f"Old_{json_name}: {w}, {h}")     for debugging
 
     # --- Make square by expanding to larger side ---
     if w != h:
@@ -119,10 +111,19 @@ for json_name in json_files:
             y1 -= diff
             y2 = H
 
-    # Extract the patch from the image and save it 
+    # --- Final safety clip (just in case) ---
+    x1 = max(0, x1)
+    y1 = max(0, y1)
+    x2 = min(W, x2)
+    y2 = min(H, y2)
+
+    # --- Extract and save patch ---
     patch = image[y1:y2, x1:x2]
-    patch_filename = os.path.join(output_folder,image_name)
-    cv2.imwrite(patch_filename,patch)
+    if patch.size == 0:
+        print(f"Empty patch for {json_name}: ({x1},{y1},{x2},{y2})")
+        continue
 
-    
+    patch_filename = os.path.join(output_folder, image_name)
+    cv2.imwrite(patch_filename, patch)
 
+print("Patch extraction complete (visualizer-equivalent).")

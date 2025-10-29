@@ -21,6 +21,7 @@ random_patched_image_files = sample(patched_image_files, 20)
 for i, image_file in enumerate(random_patched_image_files):
     if i == 20:
         break
+    
 
     path_patched = os.path.join(patched_images_folder, image_file)
     original_path = os.path.join(original_image_folder, image_file)
@@ -58,7 +59,6 @@ for i, image_file in enumerate(random_patched_image_files):
     x_min, x_max = np.min(all_pts[:, 0]), np.max(all_pts[:, 0])
     y_min, y_max = np.min(all_pts[:, 1]), np.max(all_pts[:, 1])
 
-    # === Bounding box with small margin ===
     margin = 0.10
     w, h = x_max - x_min, y_max - y_min
     size = max(w, h) * (1 + margin)
@@ -66,27 +66,49 @@ for i, image_file in enumerate(random_patched_image_files):
     x1, y1 = int(cx - size / 2), int(cy - size / 2)
     x2, y2 = int(cx + size / 2), int(cy + size / 2)
 
-    # Clip to image boundaries
+    
     H, W, _ = orig.shape
+
+    # Clip to image boundaries first
     x1 = max(0, x1)
     y1 = max(0, y1)
-    x2 = min(W - 1, x2)
-    y2 = min(H - 1, y2)
+    x2 = min(W, x2)
+    y2 = min(H, y2)
 
-    # --- Ensure the patch stays square ---
+    # Compute width and height
     w = x2 - x1
     h = y2 - y1
 
+    #print(f"Old_{json_name}: {w}, {h}")     for debugging
+
+    # --- Make square by expanding to larger side ---
     if w != h:
-        # Make it square by shrinking the larger side
-        side = min(w, h)
-        # Center the square within the existing box
+        side = max(w, h)
         cx = (x1 + x2) // 2
         cy = (y1 + y2) // 2
-        x1 = max(0, int(cx - side // 2))
-        y1 = max(0, int(cy - side // 2))
-        x2 = min(W, int(cx + side // 2))
-        y2 = min(H, int(cy + side // 2))
+
+        # Recalculate a centered square
+        x1 = int(cx - side / 2)
+        y1 = int(cy - side / 2)
+        x2 = int(cx + side / 2)
+        y2 = int(cy + side / 2)
+
+        # --- Adjust if box goes beyond image boundaries ---
+        if x1 < 0:
+            x2 -= x1
+            x1 = 0
+        if y1 < 0:
+            y2 -= y1
+            y1 = 0
+        if x2 > W:
+            diff = x2 - W
+            x1 -= diff
+            x2 = W
+        if y2 > H:
+            diff = y2 - H
+            y1 -= diff
+            y2 = H
+
 
     # Draw bounding box
     cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 255, 0), 2)
