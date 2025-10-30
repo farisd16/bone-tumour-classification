@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import os
 from random import sample
 import pandas as pd
+from tumour_bounding_box import bounding_box_creator
 
 
 # === Paths ===
@@ -13,7 +14,7 @@ json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
 image_folder = os.path.join(base_dir, "BTXRD", "images")
 
 # === Collect all JSON files ===
-json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]
+json_files = sorted([f for f in os.listdir(json_folder) if f.endswith(".json")])
 
 classes = [
     "osteochondroma",
@@ -61,21 +62,8 @@ for json_name in json_files:
 
     # Combine all shapes’ points into one big array 
     all_pts = np.concatenate(all_pts, axis=0)
-    x_min, x_max = np.min(all_pts[:, 0]), np.max(all_pts[:, 0])
-    y_min, y_max = np.min(all_pts[:, 1]), np.max(all_pts[:, 1])
-
-    # Compute tumour region before margin
-    w_tumour_before_margin, h_tumour_before_margin = x_max - x_min, y_max - y_min
-
-    # Expand with margin 
-    margin = 0.10
-    size = max(w_tumour_before_margin, h_tumour_before_margin) * (1 + margin)
-    cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2
-    side = int(round(size))
-    x1 = int(round(cx - side / 2))
-    y1 = int(round(cy - side / 2))
-    x2 = x1 + side
-    y2 = y1 + side
+    
+    x1,y1,x2,y2 = bounding_box_creator(all_pts, original_image=overlay , label = label, margin=0.10)
 
     # Tumour region after margin
     w, h = x2 - x1, y2 - y1
@@ -114,7 +102,7 @@ print(f"Total images checked: {len(json_files)}")
 print(f"Images with bounding box exceeding bounds: {len(unsquared_images)}")
 
 # === Save CSV report ===
-csv_path = os.path.join(base_dir, "bounding_box_issues.csv")
+csv_path = os.path.join(base_dir, "after_bounding_box_issues.csv")
 df = pd.DataFrame(unsquared_images)
 df.to_csv(csv_path, index=False)
 print(f"\nReport saved to: {csv_path}")
