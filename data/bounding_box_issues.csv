@@ -1,157 +1,157 @@
-filename,label,Original_image_width,Original_image_height,x1_tumour,y1_tumour,x2_tumour,y2_tumour,box_width,box_height,out_of_bounds
-IMG000398.json,multiple osteochondromas,1712,2651,40,392,1881,2233,1841,1841,True
-IMG000361.json,osteochondroma,2800,1548,973,-8,2096,1115,1123,1123,True
-IMG001462.json,simple bone cyst,1964,827,296,-38,1072,738,776,776,True
-IMG001527.json,multiple osteochondromas,2173,3353,-276,76,2430,2782,2706,2706,True
-IMG001675.json,osteosarcoma,474,769,22,-14,388,352,366,366,True
-IMG000967.json,multiple osteochondromas,2021,1179,316,-129,1563,1118,1247,1247,True
-IMG001634.json,osteosarcoma,2308,2825,908,1434,2319,2845,1411,1411,True
-IMG001008.json,multiple osteochondromas,1785,2021,100,590,1539,2029,1439,1439,True
-IMG001376.json,osteosarcoma,1354,1374,-23,302,812,1137,835,835,True
-IMG001663.json,multiple osteochondromas,1024,844,136,14,987,865,851,851,True
-IMG001478.json,multiple osteochondromas,1042,2586,-292,372,1378,2042,1670,1670,True
-IMG001614.json,simple bone cyst,1385,485,905,120,1302,517,397,397,True
-IMG001301.json,multiple osteochondromas,1616,2305,-192,250,1530,1972,1722,1722,True
-IMG000394.json,multiple osteochondromas,1108,1051,24,-30,1128,1074,1104,1104,True
-IMG001706.json,multiple osteochondromas,585,800,-64,96,657,817,721,721,True
-IMG001356.json,multiple osteochondromas,2920,2320,613,714,2549,2650,1936,1936,True
-IMG000101.json,osteosarcoma,567,609,296,296,584,584,288,288,True
-IMG001481.json,osteochondroma,515,855,253,139,537,423,284,284,True
-IMG000013.json,osteosarcoma,3320,3408,-20,1141,651,1812,671,671,True
-IMG001100.json,multiple osteochondromas,1712,2987,-712,-60,2218,2870,2930,2930,True
-IMG001383.json,multiple osteochondromas,887,762,88,233,799,944,711,711,True
-IMG001454.json,osteochondroma,1351,3844,-98,2013,584,2695,682,682,True
-IMG001382.json,multiple osteochondromas,874,860,48,270,804,1026,756,756,True
-IMG001101.json,multiple osteochondromas,1430,2941,-671,314,2069,3054,2740,2740,True
-IMG001551.json,giant cell tumor,541,1024,144,366,631,853,487,487,True
-IMG001711.json,multiple osteochondromas,569,703,-88,-32,667,723,755,755,True
-IMG001438.json,multiple osteochondromas,1994,2430,225,166,2153,2094,1928,1928,True
-IMG001592.json,multiple osteochondromas,2768,2209,-60,-30,2767,2797,2827,2827,True
-IMG000403.json,multiple osteochondromas,1626,2302,-188,252,1491,1931,1679,1679,True
-IMG001642.json,multiple osteochondromas,1024,882,-24,-110,1017,931,1041,1041,True
-IMG001707.json,multiple osteochondromas,540,800,-6,208,595,809,601,601,True
-IMG001245.json,multiple osteochondromas,1270,2277,-277,370,1421,2068,1698,1698,True
-IMG000136.json,osteosarcoma,515,817,134,598,360,824,226,226,True
-IMG000970.json,multiple osteochondromas,2021,1167,380,-326,1656,950,1276,1276,True
-IMG001662.json,multiple osteochondromas,1019,1280,-60,10,1210,1280,1270,1270,True
-IMG001009.json,multiple osteochondromas,1768,2021,166,314,1946,2094,1780,1780,True
-IMG000659.json,multiple osteochondromas,2441,3408,-150,699,2624,3473,2774,2774,True
-IMG000399.json,multiple osteochondromas,1681,2738,-232,278,1607,2117,1839,1839,True
-IMG000663.json,multiple osteochondromas,2472,2883,-314,-120,2598,2792,2912,2912,True
-IMG001834.json,multiple osteochondromas,483,838,-111,174,468,753,579,579,True
-IMG001530.json,multiple osteochondromas,1238,2017,-278,-67,1419,1630,1697,1697,True
-IMG000668.json,multiple osteochondromas,1459,3408,-859,-136,2360,3083,3219,3219,True
-IMG000054.json,osteosarcoma,628,816,156,-10,502,336,346,346,True
-IMG000404.json,multiple osteochondromas,2800,3408,-408,176,2957,3541,3365,3365,True
-IMG000691.json,simple bone cyst,1110,3065,-18,542,161,721,179,179,True
-IMG001346.json,multiple osteochondromas,1256,2120,-8,172,1488,1668,1496,1496,True
-IMG001604.json,multiple osteochondromas,564,745,-58,-21,621,658,679,679,True
-IMG001556.json,multiple osteochondromas,2141,2825,-492,-114,2572,2950,3064,3064,True
-IMG000717.json,multiple osteochondromas,1502,2364,-162,276,1552,1990,1714,1714,True
-IMG001444.json,multiple osteochondromas,926,570,-35,-171,868,732,903,903,True
-IMG001517.json,multiple osteochondromas,768,937,-22,-32,689,679,711,711,True
-IMG001002.json,multiple osteochondromas,1053,2021,-200,274,1348,1822,1548,1548,True
-IMG001686.json,multiple osteochondromas,1024,887,235,-16,877,626,642,642,True
-IMG001864.json,multiple osteochondromas,1024,1178,147,140,1091,1084,944,944,True
-IMG000664.json,multiple osteochondromas,2200,3312,-440,342,2563,3345,3003,3003,True
-IMG001833.json,multiple osteochondromas,479,811,29,252,528,751,499,499,True
-IMG001576.json,osteosarcoma,1354,2906,-50,958,906,1914,956,956,True
-IMG000936.json,multiple osteochondromas,2940,2301,187,-108,2386,2091,2199,2199,True
-IMG000035.json,osteosarcoma,611,815,168,-18,412,226,244,244,True
-IMG000131.json,osteosarcoma,528,775,228,396,562,730,334,334,True
-IMG000998.json,multiple osteochondromas,2021,2021,210,732,1518,2040,1308,1308,True
-IMG001408.json,osteosarcoma,600,713,-48,114,460,622,508,508,True
-IMG000937.json,multiple osteochondromas,1548,1981,-180,58,1088,1326,1268,1268,True
-IMG001465.json,multiple osteochondromas,1766,2996,-388,300,2166,2854,2554,2554,True
-IMG001424.json,multiple osteochondromas,586,835,-44,53,641,738,685,685,True
-IMG000777.json,multiple osteochondromas,1224,3408,-540,616,2012,3168,2552,2552,True
-IMG000995.json,multiple osteochondromas,1608,2303,-23,478,1307,1808,1330,1330,True
-IMG001516.json,multiple osteochondromas,1062,3105,-2,342,978,1322,980,980,True
-IMG000757.json,simple bone cyst,1746,3173,405,774,1754,2123,1349,1349,True
-IMG000080.json,osteosarcoma,738,805,-50,221,128,399,178,178,True
-IMG001347.json,multiple osteochondromas,1416,2333,-135,292,1573,2000,1708,1708,True
-IMG000690.json,simple bone cyst,2628,2503,-56,1513,425,1994,481,481,True
-IMG000405.json,multiple osteochondromas,1863,3408,-812,252,2472,3536,3284,3284,True
-IMG001306.json,multiple osteochondromas,1568,2318,-14,502,1627,2143,1641,1641,True
-IMG001391.json,multiple osteochondromas,1274,1292,32,28,1351,1347,1319,1319,True
-IMG001515.json,multiple osteochondromas,736,1852,-78,375,778,1231,856,856,True
-IMG000191.json,osteosarcoma,462,765,140,-2,287,145,147,147,True
-IMG001104.json,multiple osteochondromas,2882,2882,84,-31,2568,2453,2484,2484,True
-IMG000152.json,osteosarcoma,922,811,544,-12,929,373,385,385,True
-IMG001606.json,multiple osteochondromas,548,697,84,372,472,760,388,388,True
-IMG001485.json,osteochondroma,277,821,112,252,289,429,177,177,True
-IMG000806.json,synovial osteochondroma,775,772,32,-148,628,448,596,596,True
-IMG001702.json,simple bone cyst,1024,1284,265,332,1218,1285,953,953,True
-IMG000514.json,osteochondroma,877,1685,376,698,928,1250,552,552,True
-IMG000778.json,multiple osteochondromas,1644,3408,-250,604,2092,2946,2342,2342,True
-IMG001630.json,osteosarcoma,1671,800,771,-36,1453,646,682,682,True
-IMG001108.json,osteochondroma,2046,2991,961,2780,1177,2996,216,216,True
-IMG000575.json,multiple osteochondromas,1644,3408,-840,-144,2406,3102,3246,3246,True
-IMG001173.json,multiple osteochondromas,1537,1531,36,266,1343,1573,1307,1307,True
-IMG001077.json,multiple osteochondromas,2021,1239,934,808,1424,1298,490,490,True
-IMG001535.json,osteosarcoma,836,2088,-152,741,622,1515,774,774,True
-IMG000149.json,osteosarcoma,1478,699,1009,406,1303,700,294,294,True
-IMG001099.json,multiple osteochondromas,809,617,56,34,753,731,697,697,True
-IMG001563.json,multiple osteochondromas,467,813,-103,82,459,644,562,562,True
-IMG001172.json,multiple osteochondromas,1535,1529,-80,227,1240,1547,1320,1320,True
-IMG001220.json,synovial osteochondroma,2858,2307,116,-72,2743,2555,2627,2627,True
-IMG000962.json,multiple osteochondromas,1979,4881,-974,790,2905,4669,3879,3879,True
-IMG000574.json,multiple osteochondromas,1459,3349,-875,-139,2334,3070,3209,3209,True
-IMG001631.json,osteosarcoma,801,1751,152,262,830,940,678,678,True
-IMG000132.json,osteosarcoma,583,817,65,430,463,828,398,398,True
-IMG000098.json,osteosarcoma,671,815,-34,610,172,816,206,206,True
-IMG000779.json,multiple osteochondromas,1301,3139,-853,394,2015,3262,2868,2868,True
-IMG001611.json,osteochondroma,2296,2435,850,100,2530,1780,1680,1680,True
-IMG001580.json,giant cell tumor,521,1033,236,311,526,601,290,290,True
-IMG001083.json,multiple osteochondromas,1250,2611,-9,146,1289,1444,1298,1298,True
-IMG001715.json,multiple osteochondromas,520,672,-174,12,471,657,645,645,True
-IMG001693.json,multiple osteochondromas,1024,1291,108,280,1043,1215,935,935,True
-IMG001369.json,osteochondroma,753,1261,322,268,776,722,454,454,True
-IMG001514.json,multiple osteochondromas,1556,2780,-356,194,1800,2350,2156,2156,True
-IMG001797.json,multiple osteochondromas,706,1125,49,200,745,896,696,696,True
-IMG000997.json,multiple osteochondromas,1800,2021,268,-273,1690,1149,1422,1422,True
-IMG000135.json,osteosarcoma,513,816,88,586,328,826,240,240,True
-IMG001636.json,multiple osteochondromas,708,892,-20,155,507,682,527,527,True
-IMG000226.json,osteosarcoma,1608,2943,-54,920,914,1888,968,968,True
-IMG001437.json,multiple osteochondromas,1994,2430,36,-51,2027,1940,1991,1991,True
-IMG000375.json,multiple osteochondromas,1768,2889,-26,777,1559,2362,1585,1585,True
-IMG001837.json,osteochondroma,1024,1024,818,302,1068,552,250,250,True
-IMG001564.json,multiple osteochondromas,958,817,9,19,930,940,921,921,True
-IMG000660.json,multiple osteochondromas,1647,3408,288,-56,1661,1317,1373,1373,True
-IMG000640.json,simple bone cyst,2544,3056,276,2852,481,3057,205,205,True
-IMG000247.json,giant cell tumor,3032,2343,-136,1076,1100,2312,1236,1236,True
-IMG001505.json,osteosarcoma,331,823,-62,268,432,762,494,494,True
-IMG000969.json,multiple osteochondromas,2021,1168,360,20,1650,1310,1290,1290,True
-IMG001102.json,multiple osteochondromas,2992,2991,408,527,2982,3101,2574,2574,True
-IMG001529.json,multiple osteochondromas,1231,2017,-264,2,1645,1911,1909,1909,True
-IMG001712.json,multiple osteochondromas,590,720,26,-4,727,697,701,701,True
-IMG001591.json,multiple osteochondromas,2264,2573,-198,-118,2470,2550,2668,2668,True
-IMG000400.json,multiple osteochondromas,1780,2602,-258,402,1555,2215,1813,1813,True
-IMG001092.json,multiple osteochondromas,1000,2290,-98,-49,1197,1246,1295,1295,True
-IMG000396.json,multiple osteochondromas,506,1398,-189,305,621,1115,810,810,True
-IMG001246.json,multiple osteochondromas,1268,2861,-444,-88,1772,2128,2216,2216,True
-IMG001302.json,multiple osteochondromas,1616,2305,106,206,1703,1803,1597,1597,True
-IMG000397.json,multiple osteochondromas,539,1258,-98,314,587,999,685,685,True
-IMG000051.json,osteosarcoma,813,815,39,-11,167,117,128,128,True
-IMG000401.json,multiple osteochondromas,1734,2454,182,360,1757,1935,1575,1575,True
-IMG001206.json,osteochondroma,2021,1266,944,878,1361,1295,417,417,True
-IMG001528.json,multiple osteochondromas,3040,3609,-52,326,2660,3038,2712,2712,True
-IMG001416.json,multiple osteochondromas,1380,1687,-22,176,1361,1559,1383,1383,True
-IMG001103.json,multiple osteochondromas,2458,2991,380,-97,2800,2323,2420,2420,True
-IMG000968.json,multiple osteochondromas,2021,1173,437,457,1585,1605,1148,1148,True
-IMG001695.json,multiple osteochondromas,953,1200,-260,-58,1025,1227,1285,1285,True
-IMG001441.json,multiple osteochondromas,421,851,-32,268,466,766,498,498,True
-IMG000600.json,simple bone cyst,2520,2880,-164,1194,463,1821,627,627,True
-IMG001504.json,osteosarcoma,471,1081,-46,233,588,867,634,634,True
-IMG001142.json,multiple osteochondromas,1162,1694,-82,296,1207,1585,1289,1289,True
-IMG000180.json,osteosarcoma,539,769,104,-5,250,141,146,146,True
-IMG001498.json,giant cell tumor,1269,2049,-19,783,599,1401,618,618,True
-IMG001162.json,osteochondroma,2021,1204,658,-7,1012,347,354,354,True
-IMG001861.json,multiple osteochondromas,1024,1178,-32,254,834,1120,866,866,True
-IMG001477.json,multiple osteochondromas,1190,2245,-304,28,1310,1642,1614,1614,True
-IMG001359.json,multiple osteochondromas,2920,2320,310,621,2656,2967,2346,2346,True
-IMG001565.json,multiple osteochondromas,446,819,-124,116,545,785,669,669,True
-IMG000231.json,osteosarcoma,1660,2895,713,2628,1019,2934,306,306,True
-IMG000661.json,multiple osteochondromas,2314,3408,-648,-151,3026,3523,3674,3674,True
-IMG001174.json,multiple osteochondromas,2940,2307,2206,967,3046,1807,840,840,True
-IMG001676.json,osteochondroma,696,1024,-16,90,519,625,535,535,True
+filename,label,Original_image_width,Original_image_height,x1_tumour,y1_tumour,x2_tumour,y2_tumour,box_width,box_height
+IMG000398.json,multiple osteochondromas,1712,2651,40,392,1881,2233,1841,1841
+IMG000361.json,osteochondroma,2800,1548,973,-8,2096,1115,1123,1123
+IMG001462.json,simple bone cyst,1964,827,296,-38,1072,738,776,776
+IMG001527.json,multiple osteochondromas,2173,3353,-276,76,2430,2782,2706,2706
+IMG001675.json,osteosarcoma,474,769,22,-14,388,352,366,366
+IMG000967.json,multiple osteochondromas,2021,1179,316,-129,1563,1118,1247,1247
+IMG001634.json,osteosarcoma,2308,2825,908,1434,2319,2845,1411,1411
+IMG001008.json,multiple osteochondromas,1785,2021,100,590,1539,2029,1439,1439
+IMG001376.json,osteosarcoma,1354,1374,-23,302,812,1137,835,835
+IMG001663.json,multiple osteochondromas,1024,844,136,14,987,865,851,851
+IMG001478.json,multiple osteochondromas,1042,2586,-292,372,1378,2042,1670,1670
+IMG001614.json,simple bone cyst,1385,485,905,120,1302,517,397,397
+IMG001301.json,multiple osteochondromas,1616,2305,-192,250,1530,1972,1722,1722
+IMG000394.json,multiple osteochondromas,1108,1051,24,-30,1128,1074,1104,1104
+IMG001706.json,multiple osteochondromas,585,800,-64,96,657,817,721,721
+IMG001356.json,multiple osteochondromas,2920,2320,613,714,2549,2650,1936,1936
+IMG000101.json,osteosarcoma,567,609,296,296,584,584,288,288
+IMG001481.json,osteochondroma,515,855,253,139,537,423,284,284
+IMG000013.json,osteosarcoma,3320,3408,-20,1141,651,1812,671,671
+IMG001100.json,multiple osteochondromas,1712,2987,-712,-60,2218,2870,2930,2930
+IMG001383.json,multiple osteochondromas,887,762,88,233,799,944,711,711
+IMG001454.json,osteochondroma,1351,3844,-98,2013,584,2695,682,682
+IMG001382.json,multiple osteochondromas,874,860,48,270,804,1026,756,756
+IMG001101.json,multiple osteochondromas,1430,2941,-671,314,2069,3054,2740,2740
+IMG001551.json,giant cell tumor,541,1024,144,366,631,853,487,487
+IMG001711.json,multiple osteochondromas,569,703,-88,-32,667,723,755,755
+IMG001438.json,multiple osteochondromas,1994,2430,225,166,2153,2094,1928,1928
+IMG001592.json,multiple osteochondromas,2768,2209,-60,-30,2767,2797,2827,2827
+IMG000403.json,multiple osteochondromas,1626,2302,-188,252,1491,1931,1679,1679
+IMG001642.json,multiple osteochondromas,1024,882,-24,-110,1017,931,1041,1041
+IMG001707.json,multiple osteochondromas,540,800,-6,208,595,809,601,601
+IMG001245.json,multiple osteochondromas,1270,2277,-277,370,1421,2068,1698,1698
+IMG000136.json,osteosarcoma,515,817,134,598,360,824,226,226
+IMG000970.json,multiple osteochondromas,2021,1167,380,-326,1656,950,1276,1276
+IMG001662.json,multiple osteochondromas,1019,1280,-60,10,1210,1280,1270,1270
+IMG001009.json,multiple osteochondromas,1768,2021,166,314,1946,2094,1780,1780
+IMG000659.json,multiple osteochondromas,2441,3408,-150,699,2624,3473,2774,2774
+IMG000399.json,multiple osteochondromas,1681,2738,-232,278,1607,2117,1839,1839
+IMG000663.json,multiple osteochondromas,2472,2883,-314,-120,2598,2792,2912,2912
+IMG001834.json,multiple osteochondromas,483,838,-111,174,468,753,579,579
+IMG001530.json,multiple osteochondromas,1238,2017,-278,-67,1419,1630,1697,1697
+IMG000668.json,multiple osteochondromas,1459,3408,-859,-136,2360,3083,3219,3219
+IMG000054.json,osteosarcoma,628,816,156,-10,502,336,346,346
+IMG000404.json,multiple osteochondromas,2800,3408,-408,176,2957,3541,3365,3365
+IMG000691.json,simple bone cyst,1110,3065,-18,542,161,721,179,179
+IMG001346.json,multiple osteochondromas,1256,2120,-8,172,1488,1668,1496,1496
+IMG001604.json,multiple osteochondromas,564,745,-58,-21,621,658,679,679
+IMG001556.json,multiple osteochondromas,2141,2825,-492,-114,2572,2950,3064,3064
+IMG000717.json,multiple osteochondromas,1502,2364,-162,276,1552,1990,1714,1714
+IMG001444.json,multiple osteochondromas,926,570,-35,-171,868,732,903,903
+IMG001517.json,multiple osteochondromas,768,937,-22,-32,689,679,711,711
+IMG001002.json,multiple osteochondromas,1053,2021,-200,274,1348,1822,1548,1548
+IMG001686.json,multiple osteochondromas,1024,887,235,-16,877,626,642,642
+IMG001864.json,multiple osteochondromas,1024,1178,147,140,1091,1084,944,944
+IMG000664.json,multiple osteochondromas,2200,3312,-440,342,2563,3345,3003,3003
+IMG001833.json,multiple osteochondromas,479,811,29,252,528,751,499,499
+IMG001576.json,osteosarcoma,1354,2906,-50,958,906,1914,956,956
+IMG000936.json,multiple osteochondromas,2940,2301,187,-108,2386,2091,2199,2199
+IMG000035.json,osteosarcoma,611,815,168,-18,412,226,244,244
+IMG000131.json,osteosarcoma,528,775,228,396,562,730,334,334
+IMG000998.json,multiple osteochondromas,2021,2021,210,732,1518,2040,1308,1308
+IMG001408.json,osteosarcoma,600,713,-48,114,460,622,508,508
+IMG000937.json,multiple osteochondromas,1548,1981,-180,58,1088,1326,1268,1268
+IMG001465.json,multiple osteochondromas,1766,2996,-388,300,2166,2854,2554,2554
+IMG001424.json,multiple osteochondromas,586,835,-44,53,641,738,685,685
+IMG000777.json,multiple osteochondromas,1224,3408,-540,616,2012,3168,2552,2552
+IMG000995.json,multiple osteochondromas,1608,2303,-23,478,1307,1808,1330,1330
+IMG001516.json,multiple osteochondromas,1062,3105,-2,342,978,1322,980,980
+IMG000757.json,simple bone cyst,1746,3173,405,774,1754,2123,1349,1349
+IMG000080.json,osteosarcoma,738,805,-50,221,128,399,178,178
+IMG001347.json,multiple osteochondromas,1416,2333,-135,292,1573,2000,1708,1708
+IMG000690.json,simple bone cyst,2628,2503,-56,1513,425,1994,481,481
+IMG000405.json,multiple osteochondromas,1863,3408,-812,252,2472,3536,3284,3284
+IMG001306.json,multiple osteochondromas,1568,2318,-14,502,1627,2143,1641,1641
+IMG001391.json,multiple osteochondromas,1274,1292,32,28,1351,1347,1319,1319
+IMG001515.json,multiple osteochondromas,736,1852,-78,375,778,1231,856,856
+IMG000191.json,osteosarcoma,462,765,140,-2,287,145,147,147
+IMG001104.json,multiple osteochondromas,2882,2882,84,-31,2568,2453,2484,2484
+IMG000152.json,osteosarcoma,922,811,544,-12,929,373,385,385
+IMG001606.json,multiple osteochondromas,548,697,84,372,472,760,388,388
+IMG001485.json,osteochondroma,277,821,112,252,289,429,177,177
+IMG000806.json,synovial osteochondroma,775,772,32,-148,628,448,596,596
+IMG001702.json,simple bone cyst,1024,1284,265,332,1218,1285,953,953
+IMG000514.json,osteochondroma,877,1685,376,698,928,1250,552,552
+IMG000778.json,multiple osteochondromas,1644,3408,-250,604,2092,2946,2342,2342
+IMG001630.json,osteosarcoma,1671,800,771,-36,1453,646,682,682
+IMG001108.json,osteochondroma,2046,2991,961,2780,1177,2996,216,216
+IMG000575.json,multiple osteochondromas,1644,3408,-840,-144,2406,3102,3246,3246
+IMG001173.json,multiple osteochondromas,1537,1531,36,266,1343,1573,1307,1307
+IMG001077.json,multiple osteochondromas,2021,1239,934,808,1424,1298,490,490
+IMG001535.json,osteosarcoma,836,2088,-152,741,622,1515,774,774
+IMG000149.json,osteosarcoma,1478,699,1009,406,1303,700,294,294
+IMG001099.json,multiple osteochondromas,809,617,56,34,753,731,697,697
+IMG001563.json,multiple osteochondromas,467,813,-103,82,459,644,562,562
+IMG001172.json,multiple osteochondromas,1535,1529,-80,227,1240,1547,1320,1320
+IMG001220.json,synovial osteochondroma,2858,2307,116,-72,2743,2555,2627,2627
+IMG000962.json,multiple osteochondromas,1979,4881,-974,790,2905,4669,3879,3879
+IMG000574.json,multiple osteochondromas,1459,3349,-875,-139,2334,3070,3209,3209
+IMG001631.json,osteosarcoma,801,1751,152,262,830,940,678,678
+IMG000132.json,osteosarcoma,583,817,65,430,463,828,398,398
+IMG000098.json,osteosarcoma,671,815,-34,610,172,816,206,206
+IMG000779.json,multiple osteochondromas,1301,3139,-853,394,2015,3262,2868,2868
+IMG001611.json,osteochondroma,2296,2435,850,100,2530,1780,1680,1680
+IMG001580.json,giant cell tumor,521,1033,236,311,526,601,290,290
+IMG001083.json,multiple osteochondromas,1250,2611,-9,146,1289,1444,1298,1298
+IMG001715.json,multiple osteochondromas,520,672,-174,12,471,657,645,645
+IMG001693.json,multiple osteochondromas,1024,1291,108,280,1043,1215,935,935
+IMG001369.json,osteochondroma,753,1261,322,268,776,722,454,454
+IMG001514.json,multiple osteochondromas,1556,2780,-356,194,1800,2350,2156,2156
+IMG001797.json,multiple osteochondromas,706,1125,49,200,745,896,696,696
+IMG000997.json,multiple osteochondromas,1800,2021,268,-273,1690,1149,1422,1422
+IMG000135.json,osteosarcoma,513,816,88,586,328,826,240,240
+IMG001636.json,multiple osteochondromas,708,892,-20,155,507,682,527,527
+IMG000226.json,osteosarcoma,1608,2943,-54,920,914,1888,968,968
+IMG001437.json,multiple osteochondromas,1994,2430,36,-51,2027,1940,1991,1991
+IMG000375.json,multiple osteochondromas,1768,2889,-26,777,1559,2362,1585,1585
+IMG001837.json,osteochondroma,1024,1024,818,302,1068,552,250,250
+IMG001564.json,multiple osteochondromas,958,817,9,19,930,940,921,921
+IMG000660.json,multiple osteochondromas,1647,3408,288,-56,1661,1317,1373,1373
+IMG000640.json,simple bone cyst,2544,3056,276,2852,481,3057,205,205
+IMG000247.json,giant cell tumor,3032,2343,-136,1076,1100,2312,1236,1236
+IMG001505.json,osteosarcoma,331,823,-62,268,432,762,494,494
+IMG000969.json,multiple osteochondromas,2021,1168,360,20,1650,1310,1290,1290
+IMG001102.json,multiple osteochondromas,2992,2991,408,527,2982,3101,2574,2574
+IMG001529.json,multiple osteochondromas,1231,2017,-264,2,1645,1911,1909,1909
+IMG001712.json,multiple osteochondromas,590,720,26,-4,727,697,701,701
+IMG001591.json,multiple osteochondromas,2264,2573,-198,-118,2470,2550,2668,2668
+IMG000400.json,multiple osteochondromas,1780,2602,-258,402,1555,2215,1813,1813
+IMG001092.json,multiple osteochondromas,1000,2290,-98,-49,1197,1246,1295,1295
+IMG000396.json,multiple osteochondromas,506,1398,-189,305,621,1115,810,810
+IMG001246.json,multiple osteochondromas,1268,2861,-444,-88,1772,2128,2216,2216
+IMG001302.json,multiple osteochondromas,1616,2305,106,206,1703,1803,1597,1597
+IMG000397.json,multiple osteochondromas,539,1258,-98,314,587,999,685,685
+IMG000051.json,osteosarcoma,813,815,39,-11,167,117,128,128
+IMG000401.json,multiple osteochondromas,1734,2454,182,360,1757,1935,1575,1575
+IMG001206.json,osteochondroma,2021,1266,944,878,1361,1295,417,417
+IMG001528.json,multiple osteochondromas,3040,3609,-52,326,2660,3038,2712,2712
+IMG001416.json,multiple osteochondromas,1380,1687,-22,176,1361,1559,1383,1383
+IMG001103.json,multiple osteochondromas,2458,2991,380,-97,2800,2323,2420,2420
+IMG000968.json,multiple osteochondromas,2021,1173,437,457,1585,1605,1148,1148
+IMG001695.json,multiple osteochondromas,953,1200,-260,-58,1025,1227,1285,1285
+IMG001441.json,multiple osteochondromas,421,851,-32,268,466,766,498,498
+IMG000600.json,simple bone cyst,2520,2880,-164,1194,463,1821,627,627
+IMG001504.json,osteosarcoma,471,1081,-46,233,588,867,634,634
+IMG001142.json,multiple osteochondromas,1162,1694,-82,296,1207,1585,1289,1289
+IMG000180.json,osteosarcoma,539,769,104,-5,250,141,146,146
+IMG001498.json,giant cell tumor,1269,2049,-19,783,599,1401,618,618
+IMG001162.json,osteochondroma,2021,1204,658,-7,1012,347,354,354
+IMG001861.json,multiple osteochondromas,1024,1178,-32,254,834,1120,866,866
+IMG001477.json,multiple osteochondromas,1190,2245,-304,28,1310,1642,1614,1614
+IMG001359.json,multiple osteochondromas,2920,2320,310,621,2656,2967,2346,2346
+IMG001565.json,multiple osteochondromas,446,819,-124,116,545,785,669,669
+IMG000231.json,osteosarcoma,1660,2895,713,2628,1019,2934,306,306
+IMG000661.json,multiple osteochondromas,2314,3408,-648,-151,3026,3523,3674,3674
+IMG001174.json,multiple osteochondromas,2940,2307,2206,967,3046,1807,840,840
+IMG001676.json,osteochondroma,696,1024,-16,90,519,625,535,535
