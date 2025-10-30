@@ -118,7 +118,7 @@ def training_resnet(model_name):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=5e-3, weight_decay=2e-2, momentum=0.9)
     best_acc = 0.0
-    output_dir = PROJECT_ROOT / "checkpoints" / "resnet50"
+    output_dir = PROJECT_ROOT / "checkpoints" / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(EPOCHS):
