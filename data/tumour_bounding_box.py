@@ -30,7 +30,7 @@ def bounding_box_creator(all_pts, original_image, label, margin=0.10):
     y2 = y1 + side
     
     
-    # --- 3. Boundary correction (label-aware) ---
+    # Boundary correction
     H, W = original_image.shape[:2]
     out_of_bounds = x1 < 0 or y1 < 0 or x2 > W or y2 > H
 

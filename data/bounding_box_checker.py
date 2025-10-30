@@ -26,7 +26,6 @@ classes = [
     "osteofibroma",
 ]
 
-
 unsquared_images = []
 
 # === Loop through dataset ===
