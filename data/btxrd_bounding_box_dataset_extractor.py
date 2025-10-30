@@ -36,6 +36,8 @@ classes = [
     "osteofibroma",
 ]
 
+i = 0
+
 # === Loop through dataset ===
 for json_name in json_files:
     json_path = os.path.join(json_folder, json_name)
@@ -66,6 +68,7 @@ for json_name in json_files:
     x1,y1,x2,y2 = bounding_box_creator(all_pts, original_image=image , label = label, margin=0.10)
 
     if x1 < 0 or y1 < 0 or x2 > W or y2 > H or x2 <= x1 or y2 <= y1:
+        i += 1
         print(f"[SKIPPED] Out-of-bounds or invalid box in: {json_name}")
         continue
     
@@ -76,4 +79,4 @@ for json_name in json_files:
     cv2.imwrite(patch_filename, patch)
 
 
-
+print(i)
