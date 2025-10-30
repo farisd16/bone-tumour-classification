@@ -4,17 +4,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from random import sample
+import pandas as pd
 from tumour_bounding_box import bounding_box_creator
 
 
 # === Paths ===
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-dataset_dir = os.path.join(project_root, "data", "BTXRD")
-json_folder = os.path.join(dataset_dir, "Annotations")
-image_folder = os.path.join(dataset_dir, "images")
+base_dir = os.path.dirname(__file__)
+json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
+image_folder = os.path.join(base_dir, "BTXRD", "images")
 
 # === Collect all JSON files ===
-json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]
+json_files = sorted([f for f in os.listdir(json_folder) if f.endswith(".json")])
 
 classes = [
     "osteochondroma",
@@ -27,10 +27,10 @@ classes = [
 ]
 
 
-# Loop through dataset 
-for json_name in json_files:    
+unsquared_images = []
 
-    json_name = "IMG001505.json"
+# === Loop through dataset ===
+for json_name in json_files:
 
     json_path = os.path.join(json_folder, json_name)
     image_name = json_name.replace(".json", ".jpeg")
@@ -59,16 +59,10 @@ for json_name in json_files:
     for s in data["shapes"]:    
         pts = np.array(s["points"], np.int32)
         all_pts.append(pts)
-        if s["shape_type"] == "polygon":
-            cv2.polylines(overlay, [pts], True, (255, 0, 0), 3)
-            cv2.fillPoly(overlay, [pts], (255, 0, 0, 50))
-        elif s["shape_type"] == "rectangle":
-            (x1, y1), (x2, y2) = pts
-            cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3)
 
     # Combine all shapes’ points into one big array 
     all_pts = np.concatenate(all_pts, axis=0)
-
+    
     x1,y1,x2,y2 = bounding_box_creator(all_pts, original_image=overlay , label = label, margin=0.10)
 
     # Tumour region after margin
@@ -77,25 +71,38 @@ for json_name in json_files:
     cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 255, 0), 3)
 
     # Label text
-    cv2.putText(
-        overlay,
-        label,
-        (x1, max(0, y1 - 10)),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1,
-        (255, 255, 0),
-        2,
-    )
+    cv2.putText(overlay,label,(x1, max(0, y1 - 10)),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 255, 0),2,)
 
     # Blend overlay
     alpha = 0.4
     blended = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
     
+    # Check if bounding box exceeds image boundaries
+    H_orig, W_orig, _ = overlay.shape
+    out_of_bounds = x1 < 0 or y1 < 0 or x2 > W_orig or y2 > H_orig
 
-    # Plot
-    plt.figure(figsize=(8, 8))
-    plt.imshow(blended)
-    plt.xlabel(f"{json_name}")
-    plt.title(f"Class: {label},\n Original image shape: {overlay.shape}, Tumour bounding box shape: {w, h}")
-    print(x1,y1,x2,y2)
-    plt.show()
+    if out_of_bounds:
+        unsquared_images.append({
+            "filename": json_name,
+            "label": label,
+            "Original_image_width": W_orig,
+            "Original_image_height": H_orig,
+            "x1_tumour": x1,
+            "y1_tumour": y1,
+            "x2_tumour": x2,
+            "y2_tumour": y2,
+            "box_width": w,
+            "box_height": h
+        })
+
+
+# After the loop 
+print("\n=== SUMMARY ===")
+print(f"Total images checked: {len(json_files)}")
+print(f"Images with bounding box exceeding bounds: {len(unsquared_images)}")
+
+# === Save CSV report ===
+csv_path = os.path.join(base_dir, "after_bounding_box_issues.csv")
+df = pd.DataFrame(unsquared_images)
+df.to_csv(csv_path, index=False)
+print(f"\nReport saved to: {csv_path}")
