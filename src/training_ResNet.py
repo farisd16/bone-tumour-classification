@@ -33,7 +33,7 @@ class BTXRDDataset(Dataset):
         return image, label, str(img_path)
 
 
-def build_dataloaders(csv_root, images_root, batch_sizes=(128, 32, 32)):
+def build_dataloaders(csv_root, images_root, batch_sizes=(32, 32, 32)):
     train_tfm = T.Compose([
         T.Resize((224, 224)),
         T.RandomHorizontalFlip(),
@@ -52,9 +52,9 @@ def build_dataloaders(csv_root, images_root, batch_sizes=(128, 32, 32)):
     }
 
     loaders = {
-        "train": DataLoader(datasets["train"], batch_size=batch_sizes[0], shuffle=True, num_workers=4, pin_memory=True),
-        "validation": DataLoader(datasets["validation"], batch_size=batch_sizes[1], shuffle=False, num_workers=4, pin_memory=True),
-        "test": DataLoader(datasets["test"], batch_size=batch_sizes[2], shuffle=False, num_workers=4, pin_memory=True),
+        "train": DataLoader(datasets["train"], batch_size=batch_sizes[0], shuffle=True, num_workers=2, pin_memory=True),
+        "validation": DataLoader(datasets["validation"], batch_size=batch_sizes[1], shuffle=False, num_workers=2, pin_memory=True),
+        "test": DataLoader(datasets["test"], batch_size=batch_sizes[2], shuffle=False, num_workers=2, pin_memory=True),
     }
     return datasets, loaders
 
@@ -111,7 +111,7 @@ def training_resnet50():
 
     torch.save(model.state_dict(), output_dir / "final.pt")
 
-    # Testen
+    # Testing
     model.load_state_dict(torch.load(output_dir / "best.pt", map_location=device))
     model.eval()
 
@@ -127,7 +127,7 @@ def training_resnet50():
 
             all_labels.extend(labels.numpy())
             all_preds.extend(preds)
-            all_probs.extend(probs[:, 1].cpu().numpy())  # ROC für Klasse 1, bei 7 Klassen anpassen
+            all_probs.extend(probs[:, 1].cpu().numpy())  # ROC for grade 1, adjust for 7 grades
             all_paths.extend(paths)
 
     acc = (np.array(all_labels) == np.array(all_preds)).mean()
