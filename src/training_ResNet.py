@@ -33,7 +33,7 @@ class BTXRDDataset(Dataset):
         return image, label, str(img_path)
 
 
-def build_dataloaders(csv_root, images_root, batch_sizes=(128, 32, 32)):
+def build_dataloaders(csv_root, images_root, batch_sizes=(64, 32, 32)):
     train_tfm = T.Compose([
         T.Resize((224, 224)),
         T.RandomHorizontalFlip(),
@@ -52,9 +52,9 @@ def build_dataloaders(csv_root, images_root, batch_sizes=(128, 32, 32)):
     }
 
     loaders = {
-        "train": DataLoader(datasets["train"], batch_size=batch_sizes[0], shuffle=True, num_workers=4, pin_memory=True),
-        "validation": DataLoader(datasets["validation"], batch_size=batch_sizes[1], shuffle=False, num_workers=4, pin_memory=True),
-        "test": DataLoader(datasets["test"], batch_size=batch_sizes[2], shuffle=False, num_workers=4, pin_memory=True),
+        "train": DataLoader(datasets["train"], batch_size=batch_sizes[0], shuffle=True, num_workers=2, pin_memory=True),
+        "validation": DataLoader(datasets["validation"], batch_size=batch_sizes[1], shuffle=False, num_workers=2, pin_memory=True),
+        "test": DataLoader(datasets["test"], batch_size=batch_sizes[2], shuffle=False, num_workers=2, pin_memory=True),
     }
     return datasets, loaders
 
@@ -112,7 +112,14 @@ def training_resnet50():
     torch.save(model.state_dict(), output_dir / "final.pt")
 
     # Testen
-    model.load_state_dict(torch.load(output_dir / "best.pt", map_location=device))
+    # Load safely: prefer weights_only=True (avoids arbitrary pickle execution)
+    best_path = output_dir / "best.pt"
+    try:
+        state_dict = torch.load(best_path, map_location=device, weights_only=True)
+    except TypeError:
+        # Fallback for older PyTorch without weights_only
+        state_dict = torch.load(best_path, map_location=device)
+    model.load_state_dict(state_dict)
     model.eval()
 
     softmax = nn.Softmax(dim=1)
