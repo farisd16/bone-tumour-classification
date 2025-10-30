@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from random import sample
-
+import pandas as pd
 
 """
 BTXRD Annotation Visualizer
@@ -36,10 +36,10 @@ classes = [
 ]
 
 
-diff_list = []  
+
+records = []
 # === Loop through dataset ===
 for json_name in json_files:
-
 
     json_path = os.path.join(json_folder, json_name)
     image_name = json_name.replace(".json", ".jpeg")
@@ -116,9 +116,33 @@ for json_name in json_files:
     blended = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
     
 
-    # Plot
-    plt.figure(figsize=(8, 8))
-    plt.imshow(blended)
-    plt.xlabel(f"{json_name}")
-    plt.title(f"Class: {label}, Original image shape: {overlay.shape}, Tumour bounding box shape: {w, h}")
-    plt.show()
+    # --- Check if bounding box exceeds image boundaries ---
+    H, W, _ = overlay.shape
+    out_of_bounds = x1 < 0 or y1 < 0 or x2 > W or y2 > H
+
+    if out_of_bounds:
+        records.append({
+            "filename": json_name,
+            "label": label,
+            "Original_image_width": W,
+            "Original_image_height": H,
+            "x1_tumour": x1,
+            "y1_tumour": y1,
+            "x2_tumour": x2,
+            "y2_tumour": y2,
+            "box_width": w,
+            "box_height": h,
+            "out_of_bounds": out_of_bounds
+        })
+
+records.sort()
+# === After the loop ===
+print("\n=== SUMMARY ===")
+print(f"Total images checked: {len(json_files)}")
+print(f"Images with bounding box exceeding bounds: {len(records)}")
+
+# === Save CSV report ===
+csv_path = os.path.join(base_dir, "bounding_box_issues.csv")
+df = pd.DataFrame(records)
+df.to_csv(csv_path, index=False)
+print(f"\n✅ Report saved to: {csv_path}")
