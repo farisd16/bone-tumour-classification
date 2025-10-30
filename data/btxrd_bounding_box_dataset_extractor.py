@@ -2,6 +2,8 @@ import json
 import cv2
 import numpy as np
 import os
+from tumour_bounding_box import bounding_box_creator
+
 
 """
 BTXRD Bounding Box Extractor (exact visualizer-equivalent)
@@ -46,6 +48,7 @@ for json_name in json_files:
     
     image = cv2.imread(image_path)
 
+    H,W, _ = image.shape
 
     label = data["shapes"][0]["label"].lower()
     if label not in classes:
@@ -59,25 +62,13 @@ for json_name in json_files:
 
         # --- Combine all shapes’ points into one big array ---
     all_pts = np.concatenate(all_pts, axis=0)
-    x_min, x_max = np.min(all_pts[:, 0]), np.max(all_pts[:, 0])
-    y_min, y_max = np.min(all_pts[:, 1]), np.max(all_pts[:, 1])
 
-    margin = 0.10
+    x1,y1,x2,y2 = bounding_box_creator(all_pts, original_image=image , label = label, margin=0.10)
 
-    # --- Step 1: Compute tumour region ---
-    w_tumour, h_tumour = x_max - x_min, y_max - y_min
-
-    # --- Step 2: Expand with margin ---
-    size = max(w_tumour, h_tumour) * (1 + margin)
-
-    cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2
-
-    side = int(round(size))
-    x1 = int(round(cx - side / 2))
-    y1 = int(round(cy - side / 2))
-    x2 = x1 + side
-    y2 = y1 + side
-
+    if x1 < 0 or y1 < 0 or x2 > W or y2 > H or x2 <= x1 or y2 <= y1:
+        print(f"[SKIPPED] Out-of-bounds or invalid box in: {json_name}")
+        continue
+    
     w, h = x2 - x1, y2 - y1
 
     patch = image[y1:y2, x1:x2]
