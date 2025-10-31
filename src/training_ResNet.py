@@ -1,193 +1,29 @@
 from pathlib import Path
 import argparse
-import json
-import random
-import math
-from typing import Dict, List, Tuple, Optional
-
-import numpy as np
-from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchvision.transforms as T
 from torchvision import models
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-EPOCHS = 10
-
-CLASS_NAMES: List[str] = [
-    "osteochondroma",
-    "osteosarcoma",
-    "multiple osteochondromas",
-    "simple bone cyst",
-    "giant cell tumor",
-    "synovial osteochondroma",
-    "osteofibroma",
-]
-LABEL_TO_IDX: Dict[str, int] = {name: idx for idx, name in enumerate(CLASS_NAMES)}
+# Ensure project root is on sys.path when running as a script (python src/..)
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from data import build_dataloaders
+EPOCHS = 100
 
 
-class BTXRDDataset(Dataset):
-    def __init__(self, samples, transform=None):
-        self.samples = samples
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.samples)
-
-    def __getitem__(self, idx):
-        image_path, label = self.samples[idx]
-        image = Image.open(image_path).convert("RGB")
-        if self.transform:
-            image = self.transform(image)
-        return image, label, str(image_path)
+# Dataset/split/dataloader utilities moved to data/data_utils.py
 
 
-def load_label_from_annotation(annotation_path: Path) -> Optional[int]:
-    with annotation_path.open("r") as f:
-        data = json.load(f)
-
-    for shape in data.get("shapes", []):
-        label_name = shape.get("label")
-        if not label_name:
-            continue
-        key = label_name.strip().lower()
-        if key in LABEL_TO_IDX:
-            return LABEL_TO_IDX[key]
-    return None
-
-
-def collect_samples(images_root: Path, annotations_root: Path) -> List[Tuple[Path, int]]:
-    if not images_root.exists():
-        raise FileNotFoundError(f"Images folder not found: {images_root}")
-    if not annotations_root.exists():
-        raise FileNotFoundError(f"Annotations folder not found: {annotations_root}")
-    samples: List[Tuple[Path, int]] = []
-    image_paths: set[Path] = set()
-    for pattern in ("*.jpeg", "*.jpg", "*.png"):
-        image_paths.update(images_root.glob(pattern))
-    for image_path in sorted(image_paths):
-        annotation_path = annotations_root / f"{image_path.stem}.json"
-        if not annotation_path.exists():
-            continue
-        label_idx = load_label_from_annotation(annotation_path)
-        if label_idx is None:
-            continue
-        samples.append((image_path, label_idx))
-
-    if not samples:
-        raise RuntimeError("No labeled samples found. Ensure annotations exist for patched images.")
-    return samples
-
-
-def stratified_split(samples, ratios, seed):
-    per_label: Dict[int, List[Tuple[Path, int]]] = {}
-    for sample in samples:
-        per_label.setdefault(sample[1], []).append(sample)
-
-    rng = random.Random(seed)
-    splits = {"train": [], "validation": [], "test": []}
-    ratio_order = sorted(ratios, key=ratios.get, reverse=True)
-
-    for items in per_label.values():
-        items_copy = items[:]
-        rng.shuffle(items_copy)
-        n = len(items_copy)
-
-        counts = {key: int(n * ratios[key]) for key in ratios}
-        assigned = sum(counts.values())
-        remainder = n - assigned
-
-        idx = 0
-        while remainder > 0:
-            key = ratio_order[idx % len(ratio_order)]
-            counts[key] += 1
-            remainder -= 1
-            idx += 1
-
-        start = 0
-        for key in ("train", "validation", "test"):
-            end = start + counts[key]
-            splits[key].extend(items_copy[start:end])
-            start = end
-
-    for key in splits:
-        rng.shuffle(splits[key])
-    return splits
-
-
-def build_dataloaders(
-    images_root,
-    annotations_root,
-    ratios=None,
-    batch_sizes=None,
-    seed: int = 42,
+def training_resnet(
+    model_name,
+    early_stop: bool = False,
+    patience: int = 10,
+    min_delta: float = 0.0,
 ):
-    if ratios is None:
-        ratios = {"train": 0.8, "validation": 0.1, "test": 0.1}
-    if batch_sizes is None:
-        batch_sizes = {"train": 32, "validation": 32, "test": 32}
-
-    if not math.isclose(sum(ratios.values()), 1.0, rel_tol=1e-6):
-        raise ValueError(f"Split ratios must sum to 1.0, got {ratios}")
-
-    samples = collect_samples(Path(images_root), Path(annotations_root))
-    splits = stratified_split(samples, ratios, seed)
-
-    train_tfm = T.Compose(
-        [
-            T.Resize((224, 224)),
-            T.RandomHorizontalFlip(),
-            T.ToTensor(),
-        ]
-    )
-    eval_tfm = T.Compose(
-        [
-            T.Resize((224, 224)),
-            T.ToTensor(),
-        ]
-    )
-
-    datasets = {
-        "train": BTXRDDataset(splits["train"], train_tfm),
-        "validation": BTXRDDataset(splits["validation"], eval_tfm),
-        "test": BTXRDDataset(splits["test"], eval_tfm),
-    }
-
-    loaders = {
-        "train": DataLoader(
-            datasets["train"],
-            batch_size=batch_sizes["train"],
-            shuffle=True,
-            num_workers=2,
-            pin_memory=True,
-        ),
-        "validation": DataLoader(
-            datasets["validation"],
-            batch_size=batch_sizes["validation"],
-            shuffle=False,
-            num_workers=2,
-            pin_memory=True,
-        ),
-        "test": DataLoader(
-            datasets["test"],
-            batch_size=batch_sizes["test"],
-            shuffle=False,
-            num_workers=2,
-            pin_memory=True,
-        ),
-    }
-
-    for split_name, dataset in datasets.items():
-        print(f"{split_name.capitalize()} samples: {len(dataset)}")
-
-    return datasets, loaders
-
-
-def training_resnet(model_name):
     images_root = PROJECT_ROOT / "data" / "patched_BTXRD"
     annotations_root = PROJECT_ROOT / "data" / "BTXRD" / "Annotations"
     datasets, loaders = build_dataloaders(images_root, annotations_root)
@@ -220,11 +56,19 @@ def training_resnet(model_name):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=5e-3, weight_decay=2e-2, momentum=0.9)
     best_acc = 0.0
+    best_val_loss = float("inf")
+    no_improve_count = 0
+    use_early_stopping = early_stop and len(datasets["validation"]) > 0 and patience > 0
     output_dir = PROJECT_ROOT / "checkpoints" / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(EPOCHS):
         print(f"Epoch {epoch + 1}/{EPOCHS}")
+        if use_early_stopping and epoch == 0:
+            print(
+                f"Early stopping enabled (patience={patience}, min_delta={min_delta:.6f})"
+            )
+        stop_training = False
         for phase in ("train", "validation"):
             if len(datasets[phase]) == 0:
                 print(f"Skipping {phase} phase: no samples available.")
@@ -255,51 +99,26 @@ def training_resnet(model_name):
             if phase == "validation" and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 torch.save(model.state_dict(), output_dir / "best.pt")
+            # Early stopping check on validation loss
+            if phase == "validation" and use_early_stopping:
+                if epoch_loss + min_delta < best_val_loss:
+                    best_val_loss = epoch_loss
+                    no_improve_count = 0
+                else:
+                    no_improve_count += 1
+                    if no_improve_count >= patience:
+                        print(
+                            f"Early stopping triggered after {patience} epochs without validation loss improvement."
+                        )
+                        stop_training = True
+                        break  # break out of phase loop immediately
+        if stop_training:
+            break
 
     final_path = output_dir / "final.pt"
     torch.save(model.state_dict(), final_path)
 
-    # Testen
-    if len(datasets["validation"]) > 0 or len(datasets["test"]) > 0:
-        best_path = output_dir / "best.pt"
-        load_path = best_path if best_path.exists() else final_path
-        if not best_path.exists():
-            print("Best weights not found (no validation split); using final weights for evaluation.")
-
-        try:
-            state_dict = torch.load(load_path, map_location=device, weights_only=True)
-        except TypeError:
-            # Fallback for older PyTorch without weights_only
-            state_dict = torch.load(load_path, map_location=device)
-        model.load_state_dict(state_dict)
-        model.eval()
-
-        if len(datasets["test"]) == 0:
-            print("Skipping test evaluation: no samples available.")
-            return
-
-        softmax = nn.Softmax(dim=1)
-        all_labels, all_preds, all_probs, all_paths = [], [], [], []
-
-        with torch.no_grad():
-            for inputs, labels, paths in loaders["test"]:
-                inputs = inputs.to(device)
-                outputs = model(inputs)
-                probs = softmax(outputs)
-                preds = outputs.argmax(dim=1).cpu().numpy()
-
-                all_labels.extend(labels.numpy())
-                all_preds.extend(preds)
-                all_probs.extend(
-                    probs[:, 1].cpu().numpy()
-                )  # ROC for grade 1, adjust for 7 grades
-                all_paths.extend(paths)
-
-        acc = (np.array(all_labels) == np.array(all_preds)).mean()
-        print(f"Test accuracy: {acc:.4f}")
-
-        report = list(zip(all_paths, all_labels, all_preds))
-        np.save(output_dir / "test_predictions.npy", report)
+    # Testen wurde nach src/testing_ResNet.py ausgelagert
 
 
 if __name__ == "__main__":
@@ -313,5 +132,27 @@ if __name__ == "__main__":
         choices=["resnet50", "resnet34", "resnet18"],
         help="ResNet model variant to train with",
     )
+    parser.add_argument(
+        "--early-stop",
+        action="store_true",
+        help="Enable early stopping based on validation loss",
+    )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=10,
+        help="Epochs without val loss improvement before stopping",
+    )
+    parser.add_argument(
+        "--min-delta",
+        type=float,
+        default=0.0,
+        help="Minimum required improvement in val loss to reset patience",
+    )
     args = parser.parse_args()
-    training_resnet(args.model)
+    training_resnet(
+        args.model,
+        early_stop=args.early_stop,
+        patience=args.patience,
+        min_delta=args.min_delta,
+    )
