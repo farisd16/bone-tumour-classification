@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from torchvision import models
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+EPOCHS = 10
 
 
 class BTXRDDataset(Dataset):
@@ -33,17 +35,23 @@ class BTXRDDataset(Dataset):
         return image, label, str(img_path)
 
 
-def build_dataloaders(csv_root, images_root, batch_sizes=(64, 32, 32)):
-    train_tfm = T.Compose([
-        T.Resize((224, 224)),
-        T.RandomHorizontalFlip(),
-        T.RandomVerticalFlip(),
-        T.ToTensor(),
-    ])
-    eval_tfm = T.Compose([
-        T.Resize((224, 224)),
-        T.ToTensor(),
-    ])
+def build_dataloaders(
+    csv_root, images_root, batch_sizes=({"train": 32, "validation": 32, "test": 32})
+):
+    train_tfm = T.Compose(
+        [
+            T.Resize((224, 224)),
+            T.RandomHorizontalFlip(),
+            T.RandomVerticalFlip(),
+            T.ToTensor(),
+        ]
+    )
+    eval_tfm = T.Compose(
+        [
+            T.Resize((224, 224)),
+            T.ToTensor(),
+        ]
+    )
 
     datasets = {
         "train": BTXRDDataset(csv_root / "train.csv", images_root, train_tfm),
@@ -52,34 +60,68 @@ def build_dataloaders(csv_root, images_root, batch_sizes=(64, 32, 32)):
     }
 
     loaders = {
-        "train": DataLoader(datasets["train"], batch_size=batch_sizes[0], shuffle=True, num_workers=2, pin_memory=True),
-        "validation": DataLoader(datasets["validation"], batch_size=batch_sizes[1], shuffle=False, num_workers=2, pin_memory=True),
-        "test": DataLoader(datasets["test"], batch_size=batch_sizes[2], shuffle=False, num_workers=2, pin_memory=True),
+        "train": DataLoader(
+            datasets["train"],
+            batch_size=batch_sizes["train"],
+            shuffle=True,
+            num_workers=2,
+            pin_memory=True,
+        ),
+        "validation": DataLoader(
+            datasets["validation"],
+            batch_size=batch_sizes["validation"],
+            shuffle=False,
+            num_workers=2,
+            pin_memory=True,
+        ),
+        "test": DataLoader(
+            datasets["test"],
+            batch_size=batch_sizes["test"],
+            shuffle=False,
+            num_workers=2,
+            pin_memory=True,
+        ),
     }
     return datasets, loaders
 
 
-def training_resnet50():
+def training_resnet(model_name):
     csv_root = PROJECT_ROOT / "data" / "BTXRD" / "splits"
     images_root = PROJECT_ROOT / "data" / "patched_BTXRD"
     datasets, loaders = build_dataloaders(csv_root, images_root)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
-    model.fc = nn.Sequential(
-        nn.Dropout(0.5),
-        nn.Linear(2048, 7),  # 7 classes (0..6) according to create_csv.py
-    )
+    match model_name:
+        case "resnet50":
+            model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
+            model.fc = nn.Sequential(
+                nn.Dropout(0.5),
+                nn.Linear(2048, 7),  # 7 classes (0..6) according to create_csv.py
+            )
+        case "resnet34":
+            model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
+            model.fc = nn.Sequential(
+                nn.Dropout(0.5),
+                nn.Linear(512, 7),  # 7 classes (0..6) according to create_csv.py
+            )
+        case "resnet18":
+            model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+            model.fc = nn.Sequential(
+                nn.Dropout(0.5),
+                nn.Linear(512, 7),  # 7 classes (0..6) according to create_csv.py
+            )
+
     model.to(device)
+    print(f"Using model {model_name}")
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=5e-3, weight_decay=2e-2, momentum=0.9)
     best_acc = 0.0
-    output_dir = PROJECT_ROOT / "checkpoints" / "resnet50"
+    output_dir = PROJECT_ROOT / "checkpoints" / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for epoch in range(100):
+    for epoch in range(EPOCHS):
         print(f"Epoch {epoch + 1}/100")
         for phase in ("train", "validation"):
             model.train(phase == "train")
@@ -134,7 +176,9 @@ def training_resnet50():
 
             all_labels.extend(labels.numpy())
             all_preds.extend(preds)
-            all_probs.extend(probs[:, 1].cpu().numpy())  # ROC für Klasse 1, bei 7 Klassen anpassen
+            all_probs.extend(
+                probs[:, 1].cpu().numpy()
+            )  # ROC for grade 1, adjust for 7 grades
             all_paths.extend(paths)
 
     acc = (np.array(all_labels) == np.array(all_preds)).mean()
@@ -145,4 +189,15 @@ def training_resnet50():
 
 
 if __name__ == "__main__":
-    training_resnet50()
+    parser = argparse.ArgumentParser(
+        description="Run training pipeline with a variant of the ResNet model"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="resnet50",
+        choices=["resnet50, resnet34", "resnet18"],
+        help="ResNet model variant to train with",
+    )
+    args = parser.parse_args()
+    training_resnet(args.model)
