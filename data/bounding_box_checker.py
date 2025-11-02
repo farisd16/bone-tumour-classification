@@ -7,14 +7,20 @@ from random import sample
 import pandas as pd
 from tumour_bounding_box import bounding_box_creator
 
+"""
+Adds the images, whose bounding box exceeds the original image size, to the csv file. Tells also whether the bounding box of that image
+exceeds the image size
+"""
 
-# === Paths ===
+# Paths 
 base_dir = os.path.dirname(__file__)
-json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
-image_folder = os.path.join(base_dir, "BTXRD", "images")
+json_folder = os.path.join(base_dir, "dataset","BTXRD", "Annotations")
+image_folder = os.path.join(base_dir, "dataset" ,"BTXRD", "images")
 
-# === Collect all JSON files ===
+
+# Collect all JSON files 
 json_files = sorted([f for f in os.listdir(json_folder) if f.endswith(".json")])
+
 
 classes = [
     "osteochondroma",
@@ -28,7 +34,7 @@ classes = [
 
 unsquared_images = []
 
-# === Loop through dataset ===
+# Loop through dataset 
 for json_name in json_files:
 
     json_path = os.path.join(json_folder, json_name)
@@ -55,7 +61,7 @@ for json_name in json_files:
     # To store all of the tumour points
     all_pts = []
 
-    for s in data["shapes"]:    
+    for s in data["shapes"]:
         pts = np.array(s["points"], np.int32)
         all_pts.append(pts)
 
@@ -101,7 +107,8 @@ print(f"Total images checked: {len(json_files)}")
 print(f"Images with bounding box exceeding bounds: {len(unsquared_images)}")
 
 # === Save CSV report ===
-csv_path = os.path.join(base_dir, "after_bounding_box_issues.csv")
+csv_path = os.path.join(base_dir, "final_bounding_box_issues.csv")
 df = pd.DataFrame(unsquared_images)
 df.to_csv(csv_path, index=False)
 print(f"\nReport saved to: {csv_path}")
+
