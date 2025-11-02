@@ -22,6 +22,13 @@ def bounding_box_creator(all_pts, original_image, label, margin=0.10):
 
     # Expand with margin 
     size = max(w_tumour_before_margin, h_tumour_before_margin) * (1 + margin)
+
+    # Checks whether the image is too small
+    min_size = 165
+    if size < min_size:
+        size = min_size
+
+    
     cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2
     side = int(round(size))
     x1 = int(round(cx - side / 2))
@@ -30,7 +37,7 @@ def bounding_box_creator(all_pts, original_image, label, margin=0.10):
     y2 = y1 + side
     
     
-    # --- 3. Boundary correction (label-aware) ---
+    # Boundary correction
     H, W = original_image.shape[:2]
     out_of_bounds = x1 < 0 or y1 < 0 or x2 > W or y2 > H
 

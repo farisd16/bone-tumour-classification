@@ -7,11 +7,12 @@ from random import sample
 from tumour_bounding_box import bounding_box_creator
 
 
+
 # === Paths ===
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-dataset_dir = os.path.join(project_root, "data", "BTXRD")
-json_folder = os.path.join(dataset_dir, "Annotations")
-image_folder = os.path.join(dataset_dir, "images")
+base_dir = os.path.dirname(__file__)
+json_folder = os.path.join(base_dir,"dataset", "BTXRD", "Annotations")
+image_folder = os.path.join(base_dir,"dataset", "BTXRD", "images")
+
 
 # === Collect all JSON files ===
 json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]
@@ -30,7 +31,6 @@ classes = [
 # Loop through dataset 
 for json_name in json_files:    
 
-    json_name = "IMG001505.json"
 
     json_path = os.path.join(json_folder, json_name)
     image_name = json_name.replace(".json", ".jpeg")
