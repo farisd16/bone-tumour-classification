@@ -30,7 +30,6 @@ classes = [
 # Loop through dataset 
 for json_name in json_files:    
 
-    json_name = "IMG000250.json"
 
     json_path = os.path.join(json_folder, json_name)
     image_name = json_name.replace(".json", ".jpeg")

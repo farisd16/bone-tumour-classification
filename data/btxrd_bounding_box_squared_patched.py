@@ -6,14 +6,13 @@ from tumour_bounding_box import bounding_box_creator
 import pandas as pd
 
 """
-This extracts the bounding boxes for the problematic 106 images 
+This code extracts the bounding boxes for the problematic 106 images 
 """
 
 # === Paths ===
 base_dir = os.path.dirname(__file__)
 json_folder = os.path.join(base_dir, "dataset","BTXRD", "Annotations")
 image_folder = os.path.join(base_dir, "dataset","BTXRD", "images")
-output_folder = os.path.join(base_dir,"dataset", "patched_BTXRD")
 
 # For the unsquared 106 images
 squared_image_folder = os.path.join(base_dir, "dataset", "squared_padded")

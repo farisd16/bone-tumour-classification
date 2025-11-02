@@ -6,13 +6,7 @@ from tumour_bounding_box import bounding_box_creator
 
 
 """
-BTXRD Bounding Box Extractor (exact visualizer-equivalent)
------------------------------------------------------------
-This version uses *identical logic* to your visualization script.
-That means:
-- Integer-based center (truncated, not rounded)
-- Same sequence of operations (margin → clip → make-square → adjust)
-- Produces bounding boxes whose w/h stats exactly match your ±1 results
+This code extracts the patched dataset without 106 images
 """
 
 # === Paths ===
