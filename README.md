@@ -33,3 +33,111 @@ This project is part of the **Advanced Deep Learning Methods (ADLM)** course at 
 **Technical University of Munich (TUM)**, in collaboration with the  
 **Clinic for Orthopaedics and Sports Orthopaedics** and the  
 **Institute for AI and Informatics in Medicine**.
+
+---
+
+## **⬇️ Dataset Setup**
+
+Place the BTXRD dataset under the following paths relative to the project root:
+
+```
+data/
+  dataset/
+    BTXRD/
+      images/         # Original X-ray images (e.g., IMG000123.jpeg)
+      Annotations/    # JSON annotation files (same basenames as images)
+```
+
+Optional folders created by scripts in this repo:
+
+```
+data/
+  dataset/
+    patched_BTXRD/          # Extracted patches from annotations (created)
+    squared_padded/         # Padded originals for 106 special cases (created)
+    squared_patched_106/    # Patches from padded images (created)
+    patched_BTXRD_merged/   # Merge of the two patch sets (created)
+```
+
+Install dependencies:
+
+```
+pip install -r requirements.txt
+```
+
+---
+
+## **▶️ How To Run (Preparation → Training → Testing)**
+
+1) Extract standard patches from annotations
+
+```
+python data/btxrd_bounding_box_dataset_extractor.py
+```
+
+This creates `data/dataset/patched_BTXRD/` from `BTXRD/images` + `BTXRD/Annotations`.
+
+2) (Optional) Handle 106 “unsquared” special cases
+
+- Identify problematic boxes and create a report:
+
+```
+python data/bounding_box_checker.py
+```
+
+- Create padded versions and per-image padding info:
+
+```
+python data/pad_unsquared.py
+```
+
+- Extract patches from the padded images (uses `padding_info.csv`):
+
+```
+python data/btxrd_bounding_box_squared_patched.py
+```
+
+3) Merge all patches for training
+
+```
+python data/merge_patches.py
+```
+
+This creates `data/dataset/patched_BTXRD_merged/` and prefers the squared versions on filename conflicts.
+
+4) Train (with optional early stopping)
+
+```
+python src/training_ResNet.py --model resnet50 --early-stop --patience 10 --min-delta 0.001
+```
+
+Notes:
+- The training pipeline reads labels directly from JSON annotations and splits in-memory.
+- By default it uses `data/dataset/patched_BTXRD_merged/` if present, otherwise falls back to `patched_BTXRD/`.
+- Checkpoints are written under `checkpoints/<model>/`.
+
+5) Test and generate confusion matrix
+
+```
+python src/testing_ResNet.py --model resnet50
+```
+
+Outputs:
+- `checkpoints/<model>/test_predictions.npy`
+- `checkpoints/<model>/confusion_matrix.png`
+
+6) (Optional) Quick visualization of predictions
+
+```
+python src/plot_predictions.py
+```
+
+---
+
+## **ℹ️ Notes**
+
+- CSVs like `dataset_singlelabel.csv` are not required for training/testing in this pipeline; labels are taken from annotation JSONs. If needed for analysis, you can generate a CSV aligned to the patched images via:
+
+```
+python data/create_csv_patched.py
+```
