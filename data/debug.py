@@ -9,7 +9,7 @@ from random import sample
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 dataset_dir = os.path.join(project_root, "data", "BTXRD")
 original_image_folder = os.path.join(dataset_dir, "images")
-patched_images_folder = os.path.join(project_root, "data", "patched_BTXRD")
+patched_images_folder = os.path.join(project_root, "data", "dataset", "patched_BTXRD")
 json_folder = os.path.join(dataset_dir, "Annotations")
 
 # === Collect all patched images ===

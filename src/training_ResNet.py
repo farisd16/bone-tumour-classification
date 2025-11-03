@@ -86,8 +86,8 @@ def build_dataloaders(
 
 
 def training_resnet(model_name):
-    csv_root = PROJECT_ROOT / "data" / "BTXRD" / "splits"
-    images_root = PROJECT_ROOT / "data" / "patched_BTXRD"
+    csv_root = PROJECT_ROOT / "data" / "dataset" / "BTXRD" / "splits"
+    images_root = PROJECT_ROOT / "data" / "dataset" / "patched_BTXRD"
     datasets, loaders = build_dataloaders(csv_root, images_root)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

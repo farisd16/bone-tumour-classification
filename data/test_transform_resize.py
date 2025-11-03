@@ -4,7 +4,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-input_folder = os.path.join(project_root, "data", "patched_BTXRD")
+input_folder = os.path.join(project_root, "data", "dataset", "patched_BTXRD")
 output_folder = os.path.join(project_root, "data", "resized_BTXRD")
 target_size = (224, 224)
 
