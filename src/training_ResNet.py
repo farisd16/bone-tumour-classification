@@ -24,7 +24,15 @@ def training_resnet(
     patience: int = 10,
     min_delta: float = 0.0,
 ):
-    images_root = PROJECT_ROOT / "data" / "dataset" / "patched_BTXRD"
+    # Prefer merged patched images; fallback to original patched folder if missing
+    images_root = PROJECT_ROOT / "data" / "dataset" / "patched_BTXRD_merged"
+    if not images_root.exists():
+        fallback = PROJECT_ROOT / "data" / "dataset" / "patched_BTXRD"
+        if fallback.exists():
+            print(
+                f"[WARN] {images_root} not found. Falling back to {fallback}"
+            )
+            images_root = fallback
     annotations_root = PROJECT_ROOT / "data" / "dataset" / "BTXRD" / "Annotations"
     datasets, loaders = build_dataloaders(images_root, annotations_root)
 
