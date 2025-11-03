@@ -1,94 +1,32 @@
 from pathlib import Path
 import argparse
-
-import numpy as np
-import pandas as pd
-from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchvision.transforms as T
 from torchvision import models
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-EPOCHS = 10
+# Ensure project root is on sys.path when running as a script (python src/..)
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from data import build_dataloaders
+EPOCHS = 100
 
 
-class BTXRDDataset(Dataset):
-    def __init__(self, csv_file, images_root, transform=None):
-        self.df = pd.read_csv(csv_file)
-        self.images_root = Path(images_root)
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, idx):
-        row = self.df.iloc[idx]
-        img_path = self.images_root / row["image_id"]
-        image = Image.open(img_path).convert("RGB")
-        label = int(row["label"])
-        if self.transform:
-            image = self.transform(image)
-        return image, label, str(img_path)
+# Dataset/split/dataloader utilities moved to data/data_utils.py
 
 
-def build_dataloaders(
-    csv_root, images_root, batch_sizes=({"train": 32, "validation": 32, "test": 32})
+def training_resnet(
+    model_name,
+    early_stop: bool = False,
+    patience: int = 10,
+    min_delta: float = 0.0,
 ):
-    train_tfm = T.Compose(
-        [
-            T.Resize((224, 224)),
-            T.RandomHorizontalFlip(),
-            T.RandomVerticalFlip(),
-            T.ToTensor(),
-        ]
-    )
-    eval_tfm = T.Compose(
-        [
-            T.Resize((224, 224)),
-            T.ToTensor(),
-        ]
-    )
-
-    datasets = {
-        "train": BTXRDDataset(csv_root / "train.csv", images_root, train_tfm),
-        "validation": BTXRDDataset(csv_root / "val.csv", images_root, eval_tfm),
-        "test": BTXRDDataset(csv_root / "test.csv", images_root, eval_tfm),
-    }
-
-    loaders = {
-        "train": DataLoader(
-            datasets["train"],
-            batch_size=batch_sizes["train"],
-            shuffle=True,
-            num_workers=2,
-            pin_memory=True,
-        ),
-        "validation": DataLoader(
-            datasets["validation"],
-            batch_size=batch_sizes["validation"],
-            shuffle=False,
-            num_workers=2,
-            pin_memory=True,
-        ),
-        "test": DataLoader(
-            datasets["test"],
-            batch_size=batch_sizes["test"],
-            shuffle=False,
-            num_workers=2,
-            pin_memory=True,
-        ),
-    }
-    return datasets, loaders
-
-
-def training_resnet(model_name):
-    csv_root = PROJECT_ROOT / "data" / "dataset" / "BTXRD" / "splits"
     images_root = PROJECT_ROOT / "data" / "dataset" / "patched_BTXRD"
-    datasets, loaders = build_dataloaders(csv_root, images_root)
+    annotations_root = PROJECT_ROOT / "data" / "dataset" / "BTXRD" / "Annotations"
+    datasets, loaders = build_dataloaders(images_root, annotations_root)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -118,12 +56,23 @@ def training_resnet(model_name):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=5e-3, weight_decay=2e-2, momentum=0.9)
     best_acc = 0.0
+    best_val_loss = float("inf")
+    no_improve_count = 0
+    use_early_stopping = early_stop and len(datasets["validation"]) > 0 and patience > 0
     output_dir = PROJECT_ROOT / "checkpoints" / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(EPOCHS):
-        print(f"Epoch {epoch + 1}/100")
+        print(f"Epoch {epoch + 1}/{EPOCHS}")
+        if use_early_stopping and epoch == 0:
+            print(
+                f"Early stopping enabled (patience={patience}, min_delta={min_delta:.6f})"
+            )
+        stop_training = False
         for phase in ("train", "validation"):
+            if len(datasets[phase]) == 0:
+                print(f"Skipping {phase} phase: no samples available.")
+                continue
             model.train(phase == "train")
             running_loss = 0.0
             running_corrects = 0
@@ -150,35 +99,26 @@ def training_resnet(model_name):
             if phase == "validation" and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 torch.save(model.state_dict(), output_dir / "best.pt")
+            # Early stopping check on validation loss
+            if phase == "validation" and use_early_stopping:
+                if epoch_loss + min_delta < best_val_loss:
+                    best_val_loss = epoch_loss
+                    no_improve_count = 0
+                else:
+                    no_improve_count += 1
+                    if no_improve_count >= patience:
+                        print(
+                            f"Early stopping triggered after {patience} epochs without validation loss improvement."
+                        )
+                        stop_training = True
+                        break  # break out of phase loop immediately
+        if stop_training:
+            break
 
-    torch.save(model.state_dict(), output_dir / "final.pt")
+    final_path = output_dir / "final.pt"
+    torch.save(model.state_dict(), final_path)
 
-    # Testing
-    model.load_state_dict(torch.load(output_dir / "best.pt", map_location=device))
-    model.eval()
-
-    softmax = nn.Softmax(dim=1)
-    all_labels, all_preds, all_probs, all_paths = [], [], [], []
-
-    with torch.no_grad():
-        for inputs, labels, paths in loaders["test"]:
-            inputs = inputs.to(device)
-            outputs = model(inputs)
-            probs = softmax(outputs)
-            preds = outputs.argmax(dim=1).cpu().numpy()
-
-            all_labels.extend(labels.numpy())
-            all_preds.extend(preds)
-            all_probs.extend(
-                probs[:, 1].cpu().numpy()
-            )  # ROC for grade 1, adjust for 7 grades
-            all_paths.extend(paths)
-
-    acc = (np.array(all_labels) == np.array(all_preds)).mean()
-    print(f"Test accuracy: {acc:.4f}")
-
-    report = list(zip(all_paths, all_labels, all_preds))
-    np.save(output_dir / "test_predictions.npy", report)
+    # Testen wurde nach src/testing_ResNet.py ausgelagert
 
 
 if __name__ == "__main__":
@@ -189,8 +129,30 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default="resnet50",
-        choices=["resnet50, resnet34", "resnet18"],
+        choices=["resnet50", "resnet34", "resnet18"],
         help="ResNet model variant to train with",
     )
+    parser.add_argument(
+        "--early-stop",
+        action="store_true",
+        help="Enable early stopping based on validation loss",
+    )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=10,
+        help="Epochs without val loss improvement before stopping",
+    )
+    parser.add_argument(
+        "--min-delta",
+        type=float,
+        default=0.0,
+        help="Minimum required improvement in val loss to reset patience",
+    )
     args = parser.parse_args()
-    training_resnet(args.model)
+    training_resnet(
+        args.model,
+        early_stop=args.early_stop,
+        patience=args.patience,
+        min_delta=args.min_delta,
+    )

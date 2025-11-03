@@ -14,9 +14,8 @@ exceeds the image size
 
 # Paths 
 base_dir = os.path.dirname(__file__)
-json_folder = os.path.join(base_dir, "dataset","BTXRD", "Annotations")
-image_folder = os.path.join(base_dir, "dataset" ,"BTXRD", "images")
-
+json_folder = os.path.join(base_dir, "dataset", "BTXRD", "Annotations")
+image_folder = os.path.join(base_dir, "dataset", "BTXRD", "images")
 
 # Collect all JSON files 
 json_files = sorted([f for f in os.listdir(json_folder) if f.endswith(".json")])
@@ -111,4 +110,5 @@ csv_path = os.path.join(base_dir, "final_bounding_box_issues.csv")
 df = pd.DataFrame(unsquared_images)
 df.to_csv(csv_path, index=False)
 print(f"\nReport saved to: {csv_path}")
+
 

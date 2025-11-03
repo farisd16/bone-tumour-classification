@@ -12,9 +12,9 @@ This code extracts the patched dataset without 106 images
 # === Paths ===
 
 base_dir = os.path.dirname(__file__)
-json_folder = os.path.join(base_dir,"dataset", "BTXRD", "Annotations")
-image_folder = os.path.join(base_dir, "dataset","BTXRD", "images")
-output_folder = os.path.join(base_dir, "dataset","patched_BTXRD")
+json_folder = os.path.join(base_dir, "dataset", "BTXRD", "Annotations")
+image_folder = os.path.join(base_dir, "dataset", "BTXRD", "images")
+output_folder = os.path.join(base_dir, "dataset", "patched_BTXRD")
 
 
 os.makedirs(output_folder, exist_ok=True)
