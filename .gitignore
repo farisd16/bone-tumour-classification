@@ -4,4 +4,4 @@ venv/
 .venv
 
 # Ignore dataset
-data/*BTXRD/
+dataset

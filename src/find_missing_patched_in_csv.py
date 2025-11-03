@@ -4,8 +4,8 @@ import csv
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-CSV_PATH = PROJECT_ROOT / "data" / "BTXRD" / "dataset_singlelabel.csv"
-PATCHED_DIR = PROJECT_ROOT / "data" / "patched_BTXRD"
+CSV_PATH = PROJECT_ROOT / "data" / "dataset" / "BTXRD" / "dataset_singlelabel.csv"
+PATCHED_DIR = PROJECT_ROOT / "data" / "dataset" / "patched_BTXRD"
 
 
 def main():

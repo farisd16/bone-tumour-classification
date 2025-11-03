@@ -10,8 +10,8 @@ from tumour_bounding_box import bounding_box_creator
 
 # === Paths ===
 base_dir = os.path.dirname(__file__)
-json_folder = os.path.join(base_dir, "BTXRD", "Annotations")
-image_folder = os.path.join(base_dir, "BTXRD", "images")
+json_folder = os.path.join(base_dir, "dataset", "BTXRD", "Annotations")
+image_folder = os.path.join(base_dir, "dataset", "BTXRD", "images")
 
 # === Collect all JSON files ===
 json_files = sorted([f for f in os.listdir(json_folder) if f.endswith(".json")])

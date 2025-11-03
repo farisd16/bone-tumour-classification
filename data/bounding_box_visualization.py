@@ -9,7 +9,7 @@ from tumour_bounding_box import bounding_box_creator
 
 # === Paths ===
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-dataset_dir = os.path.join(project_root, "data", "BTXRD")
+dataset_dir = os.path.join(project_root, "data", "dataset", "BTXRD")
 json_folder = os.path.join(dataset_dir, "Annotations")
 image_folder = os.path.join(dataset_dir, "images")
 

@@ -4,10 +4,10 @@ import pandas as pd
 
 # --------- CONFIG (relative to project root) ----------
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATASET_DIR = os.path.join(PROJECT_ROOT, "data", "BTXRD")
+DATASET_DIR = os.path.join(PROJECT_ROOT, "data", "dataset", "BTXRD")
 EXCEL_PATH = os.path.join(DATASET_DIR, "dataset.xlsx")
 CSV_OUTPUT_PATH = os.path.join(DATASET_DIR, "dataset_singlelabel.csv")
-PATCHED_DIR = os.path.join(PROJECT_ROOT, "data", "patched_BTXRD")
+PATCHED_DIR = os.path.join(PROJECT_ROOT, "data", "dataset", "patched_BTXRD")
 
 # The seven tumor classes (must match your Excel column names exactly)
 TUMOR_COLS = [

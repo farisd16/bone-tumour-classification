@@ -15,8 +15,8 @@ from data import build_dataloaders, CLASS_NAMES
 
 
 def evaluate_resnet(model_name: str):
-    images_root = PROJECT_ROOT / "data" / "patched_BTXRD"
-    annotations_root = PROJECT_ROOT / "data" / "BTXRD" / "Annotations"
+    images_root = PROJECT_ROOT / "data" / "dataset" / "patched_BTXRD"
+    annotations_root = PROJECT_ROOT / "data" / "dataset" / "BTXRD" / "Annotations"
     datasets, loaders = build_dataloaders(images_root, annotations_root)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
