@@ -135,12 +135,14 @@ def build_dataloaders(
             T.Resize((224, 224)),
             T.RandomHorizontalFlip(),
             T.ToTensor(),
+            T.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]) # normalization expected by pretrained ResNets
         ]
     )
     eval_tfm = T.Compose(
         [
             T.Resize((224, 224)),
             T.ToTensor(),
+            T.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]) # normalization expected by pretrained ResNets
         ]
     )
 
@@ -155,21 +157,21 @@ def build_dataloaders(
             datasets["train"],
             batch_size=batch_sizes["train"],
             shuffle=True,
-            num_workers=2,
+            num_workers=0,
             pin_memory=True,
         ),
         "validation": DataLoader(
             datasets["validation"],
             batch_size=batch_sizes["validation"],
             shuffle=False,
-            num_workers=2,
+            num_workers=0,
             pin_memory=True,
         ),
         "test": DataLoader(
             datasets["test"],
             batch_size=batch_sizes["test"],
             shuffle=False,
-            num_workers=2,
+            num_workers=0,
             pin_memory=True,
         ),
     }

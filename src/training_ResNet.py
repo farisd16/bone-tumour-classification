@@ -98,10 +98,10 @@ def training_resnet(
 
                 preds = outputs.argmax(dim=1)
                 running_loss += loss.item() * inputs.size(0)
-                running_corrects += (preds == labels).sum()
+                running_corrects += (preds == labels).sum().item()
 
             epoch_loss = running_loss / len(datasets[phase])
-            epoch_acc = running_corrects.double() / len(datasets[phase])
+            epoch_acc = running_corrects / len(datasets[phase]) # float
             print(f"{phase:>11s} loss {epoch_loss:.4f}  acc {epoch_acc:.4f}")
 
             if phase == "validation" and epoch_acc > best_acc:

@@ -80,7 +80,7 @@ def evaluate_resnet(model_name: str):
 
             all_labels.extend(labels.numpy())
             all_preds.extend(preds)
-            all_probs.extend(probs[:, 1].cpu().numpy())
+            all_probs.extend(probs.max(dim=1).values.cpu().numpy()) # all_probs.extend(probs[:, 1].cpu().numpy())
             all_paths.extend(paths)
 
     acc = (np.array(all_labels) == np.array(all_preds)).mean()
