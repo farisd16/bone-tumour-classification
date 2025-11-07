@@ -73,23 +73,3 @@ class CustomDataset(Dataset):
 
 
 
-# Instantiate dataset
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-])
-
-dataset = CustomDataset(
-    image_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/patched_BTXRD",
-    json_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/BTXRD/Annotations",
-    transform=transform
-)
-print(len(dataset))
-
-image, label_idx = dataset[0]
-img_np = image.permute(1, 2, 0).numpy()
-img_np = (img_np - img_np.min()) / (img_np.max() - img_np.min()) 
-plt.imshow(img_np, cmap="gray")
-plt.title(f"Label: {dataset.classes[label_idx]} (class {label_idx})")
-plt.axis("off")
-plt.show()
