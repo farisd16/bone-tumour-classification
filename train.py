@@ -63,6 +63,16 @@ test_size  = total_len - train_size - val_size
 # Train val test dataset
 train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
 
+# Save the split indices
+split_indices = {
+    "train": train_dataset.indices,
+    "val": val_dataset.indices,
+    "test": test_dataset.indices
+}
+
+split_path = os.path.join(run_dir, "data_split.json")
+with open(split_path, "w") as f:
+    json.dump(split_indices, f)
 
 # Train val test dataloader
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
@@ -71,22 +81,21 @@ test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 
 # Model
-
 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
 model.fc = nn.Sequential(
     nn.Dropout(0.5),
-    nn.Linear(512, 7),  # 7 classes (0..6) according to create_csv.py
+    nn.Linear(512, 7),  
 )
 
-# Loss and Optimizer
-
+# Loss, Optimizere, Scheduler
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
-
+optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer, mode="min", factor=0.5, patience=2
+)
 
 # Training loop
-
-num_epochs = 10
+num_epochs = 20
 best_val_acc = 0.0
 
 for epoch in range(num_epochs):
@@ -125,9 +134,11 @@ for epoch in range(num_epochs):
             _, predicted = outputs.max(1)
             val_total += labels.size(0)
             val_correct += predicted.eq(labels).sum().item()
-
+    
     val_acc = 100 * val_correct / val_total
     avg_val_loss = val_loss / len(val_dataloader)
+
+    scheduler.step(avg_val_loss)    
 
     # Logging 
     print(f"Epoch [{epoch+1}/{num_epochs}] "
