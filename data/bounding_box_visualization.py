@@ -9,10 +9,11 @@ from tumour_bounding_box import bounding_box_creator
 
 
 # === Paths ===
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-dataset_dir = os.path.join(project_root, "data", "dataset", "BTXRD")
-json_folder = os.path.join(dataset_dir, "Annotations")
-image_folder = os.path.join(dataset_dir, "images")
+
+base_dir = os.path.dirname(__file__)
+json_folder = os.path.join(base_dir,"dataset", "BTXRD", "Annotations")
+image_folder = os.path.join(base_dir,"dataset", "BTXRD", "images")
+patched_dataset = os.path.join(base_dir,"dataset","patched_BTXRD")
 
 # === Collect all JSON files ===
 json_files = [f for f in os.listdir(json_folder) if f.endswith(".json")]
@@ -27,10 +28,8 @@ classes = [
     "osteofibroma",
 ]
 
-
 # Loop through dataset 
 for json_name in json_files:    
-
 
     json_path = os.path.join(json_folder, json_name)
     image_name = json_name.replace(".json", ".jpeg")
@@ -93,9 +92,21 @@ for json_name in json_files:
     
 
     # Plot
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(16, 8))
+    plt.subplot(121)
     plt.imshow(blended)
-    plt.xlabel(f"{json_name}")
+    plt.xlabel(f"{image_name}")
     plt.title(f"Class: {label},\n Original image shape: {overlay.shape}, Tumour bounding box shape: {w, h}")
+<<<<<<< HEAD
     print(x1,y1,x2,y2)
     plt.show()
+=======
+    
+    plt.subplot(122)
+    image_patched_path = os.path.join(patched_dataset,image_name)
+    image_patched = cv2.imread(image_patched_path)
+    plt.imshow(image_patched)
+    plt.xlabel(f"{image_name}")
+    plt.title(f"Extracted patch shape: {w, h}")
+    plt.show()
+>>>>>>> 4e1fe37 (changed the plotting section at the end)
