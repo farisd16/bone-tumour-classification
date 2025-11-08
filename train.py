@@ -17,7 +17,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # Folder structure and Tensorboard
-base_dir = "checkout"
+base_dir = "checkpoints"
 os.makedirs(base_dir, exist_ok=True)
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 run_dir = os.path.join(base_dir, f"run_{timestamp}")

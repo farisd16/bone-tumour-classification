@@ -17,7 +17,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # Paths 
-base_dir = "checkout"
+base_dir = "checkpoints"
 run_dir = os.path.join(base_dir, "run_2025-11-08_19-58-56")  
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
