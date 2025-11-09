@@ -10,6 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import json 
+from pathlib import Path
 
 
 # Device 
@@ -28,10 +29,15 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.5], std=[0.5]),
 ])
 
-# Dataset 
+# Dataset (dynamic, repo-relative)
+ROOT = Path(__file__).resolve().parent
+DATASET_DIR = ROOT / "data" / "dataset"
+image_dir = DATASET_DIR / "patched_BTXRD"
+json_dir = DATASET_DIR / "BTXRD" / "Annotations"
+
 dataset = CustomDataset(
-    image_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/patched_BTXRD",
-    json_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/BTXRD/Annotations",
+    image_dir=str(image_dir),
+    json_dir=str(json_dir),
     transform=transform
 )
 

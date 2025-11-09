@@ -4,11 +4,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms, models
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from PIL import Image
 import datetime
+from pathlib import Path
 from data.custom_dataset_class import CustomDataset
 
 
@@ -26,12 +27,14 @@ os.makedirs(run_dir, exist_ok=True)
 writer = SummaryWriter(log_dir=run_dir)
 
 
-# Transformations
-transform = transforms.Compose([
+# Transforms
+# - Train: with augmentation
+# - Eval (val/test): deterministic only
+train_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.RandomHorizontalFlip(p=0.5),
-    transforms.RandomRotation(degrees=15),    
-    
+    transforms.RandomRotation(degrees=15),
+
     # Color jitter: brightness, contrast, saturation, hue
     transforms.ColorJitter(
         brightness=0.2,     # ±20% brightness variation
@@ -39,35 +42,59 @@ transform = transforms.Compose([
         saturation=0.2,     # ±20% saturation variation
         hue=0.1             # ±0.1 hue shift
     ),
-    transforms.RandomPerspective(distortion_scale=0.2, p=0.5),  # Random perspective distortion (scale 0.2, probability 0.5)
-    transforms.GaussianBlur(kernel_size=3),   
+    transforms.RandomPerspective(distortion_scale=0.2, p=0.5), # Random perspective distortion (scale 0.2, probability 0.5)
+    transforms.GaussianBlur(kernel_size=3),
     transforms.ToTensor(),
-        
-    transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to mean=0 (and std=1 by default)
+    transforms.Normalize(mean=[0.5], std=[0.5]) # Normalize to mean=0 (and std=1 by default)
 ])
 
+eval_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5]) # Normalize to mean=0 (and std=1 by default)
+])
 
-# Dataset
-dataset = CustomDataset(
-    image_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/patched_BTXRD",
-    json_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/BTXRD/Annotations",
-    transform=transform
+# Dataset (dynamic, repo-relative)
+ROOT = Path(__file__).resolve().parent
+DATASET_DIR = ROOT / "data" / "dataset"
+image_dir = DATASET_DIR / "patched_BTXRD"
+json_dir = DATASET_DIR / "BTXRD" / "Annotations"
+
+# Build a base dataset to create splits (no transform needed for indexing)
+base_dataset = CustomDataset(
+    image_dir=str(image_dir),
+    json_dir=str(json_dir),
+    transform=None
 )
 
 # Dataset length
-total_len = len(dataset)
+total_len = len(base_dataset)
 train_size = int(0.8 * total_len)
 val_size   = int(0.10 * total_len)
 test_size  = total_len - train_size - val_size
 
 # Train val test dataset
-train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+train_subset, val_subset, test_subset = random_split(base_dataset, [train_size, val_size, test_size])
+
+# Rebuild subsets with appropriate transforms using the same indices
+train_dataset = Subset(
+    CustomDataset(str(image_dir), str(json_dir), transform=train_transform),
+    train_subset.indices,
+)
+val_dataset = Subset(
+    CustomDataset(str(image_dir), str(json_dir), transform=eval_transform),
+    val_subset.indices,
+)
+test_dataset = Subset(
+    CustomDataset(str(image_dir), str(json_dir), transform=eval_transform),
+    test_subset.indices,
+)
 
 # Save the split indices
 split_indices = {
-    "train": train_dataset.indices,
-    "val": val_dataset.indices,
-    "test": test_dataset.indices
+    "train": train_subset.indices,
+    "val": val_subset.indices,
+    "test": test_subset.indices
 }
 
 split_path = os.path.join(run_dir, "data_split.json")
