@@ -10,7 +10,9 @@ from tqdm import tqdm
 from PIL import Image
 import datetime
 from data.custom_dataset_class import CustomDataset
-
+from collections import Counter
+from torch.utils.data import DataLoader
+import numpy as np
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -20,7 +22,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 base_dir = "checkpoints"
 os.makedirs(base_dir, exist_ok=True)
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-run_dir = os.path.join(base_dir, f"run_{timestamp}")
+run_dir = os.path.join(base_dir, f"run_weighted_cross_entropy{timestamp}")
 os.makedirs(run_dir, exist_ok=True)
 
 writer = SummaryWriter(log_dir=run_dir)
@@ -87,8 +89,15 @@ model.fc = nn.Sequential(
     nn.Linear(512, 7),  
 )
 
-# Loss, Optimizere, Scheduler
-criterion = nn.CrossEntropyLoss()
+# Weighted Cross Entropy Loss, Optimizer, Scheduler
+
+targets = [label for _, label in train_dataset]  
+class_counts = Counter(targets)
+weights = 1.0 / np.array([class_counts[i] for i in range(7)])
+weights = weights / weights.sum() * 7
+class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
+
 optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, mode="min", factor=0.5, patience=2

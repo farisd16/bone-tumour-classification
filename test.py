@@ -10,7 +10,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import json 
-
+import numpy as np
+from metrics import confusionMatrix
 
 # Device 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -86,14 +87,4 @@ test_acc = 100 * correct / total
 print(f"\nTest Loss: {avg_test_loss:.4f} | Test Accuracy: {test_acc:.2f}%")
 
 
-cm = confusion_matrix(all_labels, all_preds)
-print("\nClassification Report:")
-print(classification_report(all_labels, all_preds, digits=3))
-
-plt.figure(figsize=(7, 5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-plt.xlabel("Predicted")
-plt.ylabel("True")
-plt.title("Confusion Matrix")
-plt.tight_layout()
-plt.show()
+confusionMatrix(all_labels, all_preds, run_dir)

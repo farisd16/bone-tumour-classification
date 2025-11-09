@@ -1,8 +1,0 @@
-pandas
-openpyxl
-opencv-python
-matplotlib
-PyQt6
-pillow
-torchvision
-tqdm
