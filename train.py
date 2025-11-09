@@ -74,7 +74,10 @@ val_size   = int(0.10 * total_len)
 test_size  = total_len - train_size - val_size
 
 # Train val test dataset
-train_subset, val_subset, test_subset = random_split(base_dataset, [train_size, val_size, test_size])
+train_subset, val_subset, test_subset = random_split(
+    base_dataset, [train_size, val_size, test_size],
+    generator=torch.Generator().manual_seed(42)
+)
 
 # Rebuild subsets with appropriate transforms using the same indices
 train_dataset = Subset(
@@ -113,6 +116,7 @@ model.fc = nn.Sequential(
     nn.Dropout(0.5),
     nn.Linear(512, 7),  
 )
+model = model.to(device)
 
 # Loss, Optimizere, Scheduler
 criterion = nn.CrossEntropyLoss()

@@ -19,7 +19,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Paths 
 base_dir = "checkpoints"
-run_dir = os.path.join(base_dir, "run_2025-11-08_19-58-56")  
+run_dir = os.path.join(base_dir, "run_2025-11-09_20-14-54")  
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
 # Transformations (no augmentation, only normalization) 
@@ -47,8 +47,11 @@ with open(os.path.join(run_dir,"data_split.json"), "r") as f:
 
 test_indices = split_indices["test"]
 
-# Create test subset 
-test_dataset = Subset(dataset, test_indices)
+# Create test subset with defensive index filtering
+valid_indices = [i for i in test_indices if 0 <= i < len(dataset)]
+if len(valid_indices) != len(test_indices):
+    print(f"Warning: {len(test_indices) - len(valid_indices)} / {len(test_indices)} test indices were out of range and were skipped.")
+test_dataset = Subset(dataset, valid_indices)
 test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 # Model 
@@ -57,7 +60,13 @@ model.fc = nn.Sequential(
     nn.Dropout(0.5),
     nn.Linear(512, 7),
 )
-model.load_state_dict(torch.load(best_model_path, map_location=device))
+# Load weights safely (suppress FutureWarning)
+try:
+    state = torch.load(best_model_path, map_location=device, weights_only=True)
+except TypeError:
+    # Older PyTorch versions don't support weights_only
+    state = torch.load(best_model_path, map_location=device)
+model.load_state_dict(state)
 model = model.to(device)
 model.eval()
 
