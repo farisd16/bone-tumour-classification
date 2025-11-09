@@ -13,6 +13,8 @@ from data.custom_dataset_class import CustomDataset
 from collections import Counter
 from torch.utils.data import DataLoader
 import numpy as np
+from sklearn.model_selection import StratifiedShuffleSplit
+
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -22,7 +24,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 base_dir = "checkpoints"
 os.makedirs(base_dir, exist_ok=True)
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-run_dir = os.path.join(base_dir, f"run_weighted_cross_entropy{timestamp}")
+run_dir = os.path.join(base_dir, f"run_{timestamp}")
 os.makedirs(run_dir, exist_ok=True)
 
 writer = SummaryWriter(log_dir=run_dir)
@@ -56,31 +58,37 @@ dataset = CustomDataset(
     transform=transform
 )
 
-# Dataset length
-total_len = len(dataset)
-train_size = int(0.8 * total_len)
-val_size   = int(0.10 * total_len)
-test_size  = total_len - train_size - val_size
+targets = [label for _, label in dataset]
+indices = np.arange(len(dataset))
 
-# Train val test dataset
-train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+# Stratified shuffling 
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+train_idx, temp_idx = next(sss.split(indices, targets))
 
-# Save the split indices
+sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
+val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
+
 split_indices = {
-    "train": train_dataset.indices,
-    "val": val_dataset.indices,
-    "test": test_dataset.indices
+    "train": train_idx.tolist(),
+    "val": val_idx.tolist(),
+    "test": test_idx.tolist(),
 }
 
-split_path = os.path.join(run_dir, "data_split.json")
-with open(split_path, "w") as f:
+split_save_path = "data_split.json"
+
+with open(split_save_path, "w") as f:
     json.dump(split_indices, f)
+print(f"Saved split to {split_save_path}")
 
-# Train val test dataloader
+# === Create subsets using the same indices ===
+train_dataset = torch.utils.data.Subset(dataset, split_indices["train"])
+val_dataset   = torch.utils.data.Subset(dataset, split_indices["val"])
+test_dataset  = torch.utils.data.Subset(dataset, split_indices["test"])
+
+# === Dataloaders ===
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False)
-test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-
+val_dataloader   = DataLoader(val_dataset, batch_size=16, shuffle=False)
+test_dataloader  = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 # Model
 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
@@ -89,14 +97,19 @@ model.fc = nn.Sequential(
     nn.Linear(512, 7),  
 )
 
-# Weighted Cross Entropy Loss, Optimizer, Scheduler
+# (Weighted) Cross Entropy Loss, Optimizer, Scheduler
+weighted_cross_entropy = False
 
-targets = [label for _, label in train_dataset]  
-class_counts = Counter(targets)
-weights = 1.0 / np.array([class_counts[i] for i in range(7)])
-weights = weights / weights.sum() * 7
-class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
-criterion = nn.CrossEntropyLoss(weight=class_weights)
+if weighted_cross_entropy: 
+    targets = [label for _, label in train_dataset]  
+    class_counts = Counter(targets)
+    weights = 1.0 / np.array([class_counts[i] for i in range(7)])
+    weights = weights / weights.sum() * 7
+    class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+else: 
+    criterion = nn.CrossEntropyLoss()
+
 
 optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -164,7 +177,7 @@ for epoch in range(num_epochs):
     if val_acc > best_val_acc:
         best_val_acc = val_acc
         torch.save(model.state_dict(), f"{run_dir}/best_model.pth")
-        print("✅ Saved new best model")
+        print("Saved new best model")
 
 writer.close()
 print("Training complete")
