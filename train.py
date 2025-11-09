@@ -14,7 +14,7 @@ from collections import Counter
 from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
-
+import pandas as pd
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -24,7 +24,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 base_dir = "checkpoints"
 os.makedirs(base_dir, exist_ok=True)
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-run_dir = os.path.join(base_dir, f"run_{timestamp}")
+run_dir = os.path.join(base_dir, f"run_weighted_cross_entropy{timestamp}")
 os.makedirs(run_dir, exist_ok=True)
 
 writer = SummaryWriter(log_dir=run_dir)
@@ -80,7 +80,7 @@ with open(split_save_path, "w") as f:
     json.dump(split_indices, f)
 print(f"Saved split to {split_save_path}")
 
-# === Create subsets using the same indices ===
+# Create subsets using the same indices 
 train_dataset = torch.utils.data.Subset(dataset, split_indices["train"])
 val_dataset   = torch.utils.data.Subset(dataset, split_indices["val"])
 test_dataset  = torch.utils.data.Subset(dataset, split_indices["test"])
@@ -98,7 +98,7 @@ model.fc = nn.Sequential(
 )
 
 # (Weighted) Cross Entropy Loss, Optimizer, Scheduler
-weighted_cross_entropy = False
+weighted_cross_entropy = True
 
 if weighted_cross_entropy: 
     targets = [label for _, label in train_dataset]  

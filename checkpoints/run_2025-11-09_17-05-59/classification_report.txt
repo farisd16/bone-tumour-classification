@@ -1,0 +1,15 @@
+Classification Report
+================================================================================
+                          precision    recall  f1-score   support
+
+          osteochondroma      0.986     0.961     0.973        76
+            osteosarcoma      0.917     1.000     0.957        22
+multiple osteochondromas      0.852     0.958     0.902        24
+        simple bone cyst      0.913     0.840     0.875        25
+        giant cell tumor      1.000     1.000     1.000         9
+ synovial osteochondroma      1.000     1.000     1.000         7
+            osteofibroma      1.000     0.875     0.933         8
+
+                accuracy                          0.947       171
+               macro avg      0.953     0.948     0.949       171
+            weighted avg      0.950     0.947     0.947       171

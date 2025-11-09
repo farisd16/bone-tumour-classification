@@ -19,7 +19,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Paths 
 base_dir = "checkpoints"
-run_dir = os.path.join(base_dir, "run_weighted_cross_entropy2025-11-09_12-24-10")  
+run_dir = os.path.join(base_dir, "run_weighted_cross_entropy2025-11-09_18-30-41")  
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
 # Transformations (no augmentation, only normalization) 
@@ -37,7 +37,7 @@ dataset = CustomDataset(
 )
 
 # Load split indices from training 
-with open(os.path.join(run_dir,"data_split.json"), "r") as f:
+with open("data_split.json", "r") as f:
     split_indices = json.load(f)
 
 test_indices = split_indices["test"]
