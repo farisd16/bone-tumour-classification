@@ -32,8 +32,7 @@ class CustomDataset(Dataset):
         self.transform = transform
         self.samples = []
 
-        # Deterministic ordering across OS/filesystems
-        for fname in sorted(os.listdir(image_dir)):
+        for fname in os.listdir(image_dir):
             
             if not fname.lower().endswith(".jpeg"):
                 continue

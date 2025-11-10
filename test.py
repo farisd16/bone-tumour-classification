@@ -10,8 +10,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import json 
-from pathlib import Path
-
+import numpy as np
+from metrics import confusionMatrix
 
 # Device 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,7 +19,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Paths 
 base_dir = "checkpoints"
-run_dir = os.path.join(base_dir, "run_2025-11-09_20-14-54")  
+run_dir = os.path.join(base_dir, "run_weighted_cross_entropy2025-11-09_18-30-41")  
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
 # Transformations (no augmentation, only normalization) 
@@ -29,29 +29,21 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.5], std=[0.5]),
 ])
 
-# Dataset (dynamic, repo-relative)
-ROOT = Path(__file__).resolve().parent
-DATASET_DIR = ROOT / "data" / "dataset"
-image_dir = DATASET_DIR / "patched_BTXRD"
-json_dir = DATASET_DIR / "BTXRD" / "Annotations"
-
+# Dataset 
 dataset = CustomDataset(
-    image_dir=str(image_dir),
-    json_dir=str(json_dir),
+    image_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/patched_BTXRD",
+    json_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/BTXRD/Annotations",
     transform=transform
 )
 
 # Load split indices from training 
-with open(os.path.join(run_dir,"data_split.json"), "r") as f:
+with open("data_split.json", "r") as f:
     split_indices = json.load(f)
 
 test_indices = split_indices["test"]
 
-# Create test subset with defensive index filtering
-valid_indices = [i for i in test_indices if 0 <= i < len(dataset)]
-if len(valid_indices) != len(test_indices):
-    print(f"Warning: {len(test_indices) - len(valid_indices)} / {len(test_indices)} test indices were out of range and were skipped.")
-test_dataset = Subset(dataset, valid_indices)
+# Create test subset 
+test_dataset = Subset(dataset, test_indices)
 test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 # Model 
@@ -60,13 +52,7 @@ model.fc = nn.Sequential(
     nn.Dropout(0.5),
     nn.Linear(512, 7),
 )
-# Load weights safely (suppress FutureWarning)
-try:
-    state = torch.load(best_model_path, map_location=device, weights_only=True)
-except TypeError:
-    # Older PyTorch versions don't support weights_only
-    state = torch.load(best_model_path, map_location=device)
-model.load_state_dict(state)
+model.load_state_dict(torch.load(best_model_path, map_location=device))
 model = model.to(device)
 model.eval()
 
@@ -101,14 +87,4 @@ test_acc = 100 * correct / total
 print(f"\nTest Loss: {avg_test_loss:.4f} | Test Accuracy: {test_acc:.2f}%")
 
 
-cm = confusion_matrix(all_labels, all_preds)
-print("\nClassification Report:")
-print(classification_report(all_labels, all_preds, digits=3))
-
-plt.figure(figsize=(7, 5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-plt.xlabel("Predicted")
-plt.ylabel("True")
-plt.title("Confusion Matrix")
-plt.tight_layout()
-plt.show()
+confusionMatrix(all_labels, all_preds, run_dir)
