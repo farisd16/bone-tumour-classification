@@ -85,7 +85,7 @@ train_dataset = torch.utils.data.Subset(dataset, split_indices["train"])
 val_dataset   = torch.utils.data.Subset(dataset, split_indices["val"])
 test_dataset  = torch.utils.data.Subset(dataset, split_indices["test"])
 
-# === Dataloaders ===
+# Dataloaders 
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_dataloader   = DataLoader(val_dataset, batch_size=16, shuffle=False)
 test_dataloader  = DataLoader(test_dataset, batch_size=16, shuffle=False)
@@ -142,7 +142,7 @@ for epoch in range(num_epochs):
     train_acc = 100 * correct / total
     avg_train_loss = train_loss / len(train_dataloader)
 
-    # === Validation ===
+    # Validation 
     model.eval()
     val_loss = 0.0
     val_correct, val_total = 0, 0
