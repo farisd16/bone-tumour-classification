@@ -69,7 +69,7 @@ pip install -r requirements.txt
 
 ## **▶️ How To Run (Preparation → Training → Testing)**
 
-1) Extract standard patches from annotations
+1) Extract patches from annotations
 
 ```
 python data/btxrd_bounding_box_dataset_extractor.py
