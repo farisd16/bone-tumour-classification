@@ -3,6 +3,6 @@ __pycache__/
 venv/
 .venv
 
-# Ignore dataset
 dataset
-
+checkpoints
+wandb

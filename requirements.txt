@@ -6,3 +6,7 @@ PyQt6
 pillow
 torchvision
 tqdm
+wandb
+tensorboard
+seaborn
+scikit-learn
