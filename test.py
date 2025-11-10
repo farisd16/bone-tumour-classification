@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -8,57 +9,53 @@ from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 from data.custom_dataset_class import CustomDataset
 from sklearn.metrics import (
-    confusion_matrix,
     f1_score,
     precision_score,
     accuracy_score,
     recall_score,
     balanced_accuracy_score,
-) 
-import seaborn as sns
-import matplotlib.pyplot as plt
-from torch.utils.data import Subset
-import json 
-import numpy as np
-from metrics import confusionMatrix
-from pathlib import Path
+)
+
 import wandb
+
+from utils import display_confusion_matrix
+from config import WANDB_ENTITY, WANDB_PROJECT
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
 # Paths
-base_dir = "checkpoints"
+checkpoints_base_dir = "checkpoints"
 # TODO: Replace hardcoding with CLI argument
-run_name = "resnet_2025-11-10_13-45-11" #run_2025-11-10_13-08-10 checkpoints/
-run_dir = os.path.join(base_dir, run_name)  
+run_name = "resnet_2025-11-10_14-40-51"
+run_dir = os.path.join(checkpoints_base_dir, run_name)
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
-# Transformations (no augmentation, only normalization) 
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5])
-    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+# Transformations (no augmentation, only normalization)
+transform = transforms.Compose(
+    [
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5], std=[0.5]),
+        # TODO: Investigate if normalization should be done like with ResNet
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]
+)
 
-# Dataset (dynamic, repo-relative)
-ROOT = Path(__file__).resolve().parent
-DATASET_DIR = ROOT / "data" / "dataset"
-image_dir = DATASET_DIR / "patched_BTXRD_merged"  #--------------------Folder might have to be changed----------------------------
-json_dir = DATASET_DIR / "BTXRD" / "Annotations"
+DATASET_DIR = os.path.join("data", "dataset")
+image_dir = (
+    Path(DATASET_DIR) / "patched_BTXRD_merged"
+)  # Folder might have to be changed
+json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
 # Dataset
 dataset_folder_path = os.path.join("data", "dataset")
 dataset = CustomDataset(
-    image_dir=str(image_dir),
-    json_dir=str(json_dir),
-    transform=transform
+    image_dir=str(image_dir), json_dir=str(json_dir), transform=transform
 )
 
-# Load split indices from training 
-with open("data_split.json", "r") as f:
+# Load split indices from training
+with open(f"{run_dir}/data_split.json", "r") as f:
     split_indices = json.load(f)
 
 test_indices = split_indices["test"]
@@ -77,7 +74,6 @@ model.load_state_dict(torch.load(best_model_path, map_location=device))
 model.to(device)
 model.eval()
 
-
 # Loss and metrics
 criterion = nn.CrossEntropyLoss()
 test_loss = 0.0
@@ -89,7 +85,7 @@ all_labels = []
 
 api = wandb.Api()
 runs = api.runs(
-    "faris-demirovic-tum-technical-university-of-munich/bone-tumor-classification",
+    f"{WANDB_ENTITY}/{WANDB_PROJECT}",
     filters={"display_name": run_name},
 )
 if len(runs) == 0:
@@ -99,8 +95,8 @@ if len(runs) > 1:
     print("Warning: More than one wandb run found with given name")
 run_id = runs[0].id
 test_run = wandb.init(
-    entity="faris-demirovic-tum-technical-university-of-munich",
-    project="bone-tumor-classification",
+    entity=WANDB_ENTITY,
+    project=WANDB_PROJECT,
     id=run_id,
     resume="must",
     job_type="test",
@@ -125,8 +121,7 @@ test_acc = 100 * correct / total
 
 print(f"\nTest Loss: {avg_test_loss:.4f} | Test Accuracy: {test_acc:.2f}%")
 
-
-confusionMatrix(all_labels, all_preds, run_dir)
+display_confusion_matrix(all_labels, all_preds)
 
 precision_weighted = precision_score(all_labels, all_preds, average="weighted")
 recall_weighted = recall_score(all_labels, all_preds, average="weighted")

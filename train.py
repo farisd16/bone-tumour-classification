@@ -1,26 +1,25 @@
 import os
 import json
 import datetime
+from collections import Counter
+from pathlib import Path
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms, models
-from torch.utils.data import DataLoader, random_split, Subset
+from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from PIL import Image
-import datetime
-from data.custom_dataset_class import CustomDataset 
-from collections import Counter
+from data.custom_dataset_class import CustomDataset
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
-from pathlib import Path
 import wandb
+
+from config import WANDB_ENTITY, WANDB_PROJECT
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 # Folder structure and Tensorboard
 checkpoints_base_dir = "checkpoints"
@@ -37,56 +36,66 @@ writer = SummaryWriter(log_dir=run_dir)
 # Transformations
 # - Train: with augmentations
 # - Val/Test: deterministic only
-train_transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.RandomHorizontalFlip(p=0.5),
-    transforms.RandomRotation(degrees=15),    
-    
-    # Color jitter: brightness, contrast, saturation, hue
-    transforms.ColorJitter(
-        brightness=0.2,     # ±20% brightness variation
-        contrast=0.2,       # ±20% contrast variation
-        saturation=0.2,     # ±20% saturation variation
-        hue=0.1             # ±0.1 hue shift
-    ),
-    transforms.RandomPerspective(distortion_scale=0.2, p=0.5),  # Random perspective distortion (scale 0.2, probability 0.5)
-    transforms.GaussianBlur(kernel_size=3),   
-    transforms.ToTensor(),
-        
-    transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to mean=0 (and std=1 by default)
-    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+train_transform = transforms.Compose(
+    [
+        transforms.Resize((224, 224)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomRotation(degrees=15),
+        # Color jitter: brightness, contrast, saturation, hue
+        transforms.ColorJitter(
+            brightness=0.2,  # ±20% brightness variation
+            contrast=0.2,  # ±20% contrast variation
+            saturation=0.2,  # ±20% saturation variation
+            hue=0.1,  # ±0.1 hue shift
+        ),
+        transforms.RandomPerspective(
+            distortion_scale=0.2, p=0.5
+        ),  # Random perspective distortion (scale 0.2, probability 0.5)
+        transforms.GaussianBlur(kernel_size=3),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.5], std=[0.5]
+        ),  # Normalize to mean=0 (and std=1 by default)
+        # TODO: Investigate if normalization should be done like with ResNet
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]
+)
 
-val_transform = transforms.Compose([
-    transforms.Resize((224,224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to mean=0 (and std=1 by default)
-    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+val_transform = transforms.Compose(
+    [
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.5], std=[0.5]
+        ),  # Normalize to mean=0 (and std=1 by default)
+        # TODO: Investigate if normalization should be done like with ResNet
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]
+)
 
-# Dataset (dynamic, repo-relative)
-ROOT = Path(__file__).resolve().parent
-DATASET_DIR = ROOT / "data" / "dataset"
-image_dir = DATASET_DIR / "patched_BTXRD_merged" #--------------------------------------------------Folder might have to be changed---------------------------------------------------------
-json_dir = DATASET_DIR / "BTXRD" / "Annotations"
+DATASET_DIR = os.path.join("data", "dataset")
+image_dir = (
+    Path(DATASET_DIR) / "patched_BTXRD_merged"
+)  # Folder might have to be changed
+json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
 # Build a base dataset to create splits (no transform needed for indexing)
 dataset_base = CustomDataset(
-    image_dir=str(image_dir),
-    json_dir=str(json_dir),
-    transform=None
+    image_dir=str(image_dir), json_dir=str(json_dir), transform=None
 )
 
-#targets = [label for _, label in dataset_base]
-targets = np.array([dataset_base.class_to_idx[label] for _, label in dataset_base.samples])
+# targets = [label for _, label in dataset_base]
+targets = np.array(
+    [dataset_base.class_to_idx[label] for _, label in dataset_base.samples]
+)
 indices = np.arange(len(dataset_base))
 
-# Stratified shuffling 
+# Stratified shuffling
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
 train_idx, temp_idx = next(sss.split(indices, targets))
 
 sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
-#val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
+# val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
 val_rel, test_rel = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
 val_idx = temp_idx[val_rel]
 test_idx = temp_idx[test_rel]
@@ -97,22 +106,26 @@ split_indices = {
     "test": test_idx.tolist(),
 }
 
-split_save_path = "data_split.json"
+split_save_path = f"{run_dir}/data_split.json"
 
 with open(split_save_path, "w") as f:
     json.dump(split_indices, f)
 print(f"Saved split to {split_save_path}")
 
 # === Create subsets using the same indices ===
-train_ds_full = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=train_transform)
-val_ds_full  = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=val_transform)
+train_ds_full = CustomDataset(
+    image_dir=str(image_dir), json_dir=str(json_dir), transform=train_transform
+)
+val_ds_full = CustomDataset(
+    image_dir=str(image_dir), json_dir=str(json_dir), transform=val_transform
+)
 
 train_dataset = Subset(train_ds_full, split_indices["train"])
-val_dataset   = Subset(val_ds_full, split_indices["val"])
+val_dataset = Subset(val_ds_full, split_indices["val"])
 
 # === Dataloaders ===
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_dataloader   = DataLoader(val_dataset, batch_size=16, shuffle=False)
+val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 
 # Model
 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
@@ -125,15 +138,15 @@ model.to(device)
 # (Weighted) Cross Entropy Loss, Optimizer, Scheduler
 weighted_cross_entropy = False
 
-if weighted_cross_entropy: 
-    targets = [label for _, label in train_dataset]  
-    #train_targets = targets[train_idx]
+if weighted_cross_entropy:
+    targets = [label for _, label in train_dataset]
+    # train_targets = targets[train_idx]
     class_counts = Counter(targets)
     weights = 1.0 / np.array([class_counts[i] for i in range(7)])
     weights = weights / weights.sum() * 7
     class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
-else: 
+else:
     criterion = nn.CrossEntropyLoss()
 
 lr = 1e-4
@@ -144,13 +157,13 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 )
 
 # Training loop
-num_epochs = 5
+num_epochs = 20
 best_val_acc = 0.0
 
 # WandB run
 run = wandb.init(
-    entity="faris-demirovic-tum-technical-university-of-munich",
-    project="bone-tumor-classification",
+    entity=WANDB_ENTITY,
+    project=WANDB_PROJECT,
     config={
         "learning_rate": lr,
         "weight_decay": weight_decay,
