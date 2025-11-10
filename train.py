@@ -4,16 +4,17 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms, models
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from PIL import Image
 import datetime
-from data.custom_dataset_class import CustomDataset
+from data.custom_dataset_class import CustomDataset 
 from collections import Counter
 from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
+from pathlib import Path
 
 
 # Device
@@ -31,7 +32,9 @@ writer = SummaryWriter(log_dir=run_dir)
 
 
 # Transformations
-transform = transforms.Compose([
+# - Train: with augmentations
+# - Val/Test: deterministic only
+train_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomRotation(degrees=15),    
@@ -48,25 +51,47 @@ transform = transforms.Compose([
     transforms.ToTensor(),
         
     transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to mean=0 (and std=1 by default)
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
+val_transform = transforms.Compose([
+    transforms.Resize((224,224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to mean=0 (and std=1 by default)
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
 
-# Dataset
-dataset = CustomDataset(
-    image_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/patched_BTXRD",
-    json_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/BTXRD/Annotations",
-    transform=transform
+# Dataset (dynamic, repo-relative)
+ROOT = Path(__file__).resolve().parent
+DATASET_DIR = ROOT / "data" / "dataset"
+image_dir = DATASET_DIR / "patched_BTXRD_merged" #--------------------------------------------------Folder might have to be changed---------------------------------------------------------
+json_dir = DATASET_DIR / "BTXRD" / "Annotations"
+
+# Build a base dataset to create splits (no transform needed for indexing)
+dataset_base = CustomDataset(
+    image_dir=str(image_dir),
+    json_dir=str(json_dir),
+    transform=None
 )
 
-targets = [label for _, label in dataset]
-indices = np.arange(len(dataset))
+#targets = [label for _, label in dataset_base]
+targets = np.array([dataset_base.class_to_idx[label] for _, label in dataset_base.samples])
+indices = np.arange(len(dataset_base))
 
 # Stratified shuffling 
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
 train_idx, temp_idx = next(sss.split(indices, targets))
 
 sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
-val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
+#val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
+val_rel, test_rel = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
+# print("temp_idx")
+# print(len(temp_idx))
+# print(temp_idx)
+# print("val_rel")
+# print(val_rel)
+val_idx = temp_idx[val_rel]
+test_idx = temp_idx[test_rel]
 
 split_indices = {
     "train": train_idx.tolist(),
@@ -81,27 +106,32 @@ with open(split_save_path, "w") as f:
 print(f"Saved split to {split_save_path}")
 
 # === Create subsets using the same indices ===
-train_dataset = torch.utils.data.Subset(dataset, split_indices["train"])
-val_dataset   = torch.utils.data.Subset(dataset, split_indices["val"])
-test_dataset  = torch.utils.data.Subset(dataset, split_indices["test"])
+train_ds_full = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=train_transform)
+val_ds_full  = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=val_transform)
+
+train_dataset = Subset(train_ds_full, split_indices["train"])
+val_dataset   = Subset(val_ds_full, split_indices["val"])
+#test_dataset  = torch.utils.data.Subset(dataset, split_indices["test"])
 
 # === Dataloaders ===
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_dataloader   = DataLoader(val_dataset, batch_size=16, shuffle=False)
-test_dataloader  = DataLoader(test_dataset, batch_size=16, shuffle=False)
+#test_dataloader  = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 # Model
 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
 model.fc = nn.Sequential(
     nn.Dropout(0.5),
-    nn.Linear(512, 7),  
+    nn.Linear(512, 7),
 )
+model.to(device)
 
 # (Weighted) Cross Entropy Loss, Optimizer, Scheduler
 weighted_cross_entropy = False
 
 if weighted_cross_entropy: 
     targets = [label for _, label in train_dataset]  
+    #train_targets = targets[train_idx]
     class_counts = Counter(targets)
     weights = 1.0 / np.array([class_counts[i] for i in range(7)])
     weights = weights / weights.sum() * 7
@@ -109,7 +139,6 @@ if weighted_cross_entropy:
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 else: 
     criterion = nn.CrossEntropyLoss()
-
 
 optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(

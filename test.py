@@ -12,6 +12,7 @@ from torch.utils.data import Subset
 import json 
 import numpy as np
 from metrics import confusionMatrix
+from pathlib import Path
 
 # Device 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,7 +20,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Paths 
 base_dir = "checkpoints"
-run_dir = os.path.join(base_dir, "run_weighted_cross_entropy2025-11-09_18-30-41")  
+run_dir = os.path.join(base_dir, "run_2025-11-10_12-05-24")  
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
 # Transformations (no augmentation, only normalization) 
@@ -29,10 +30,16 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.5], std=[0.5]),
 ])
 
+# Dataset (dynamic, repo-relative)
+ROOT = Path(__file__).resolve().parent
+DATASET_DIR = ROOT / "data" / "dataset"
+image_dir = DATASET_DIR / "patched_BTXRD_merged"  #--------------------Folder might have to be changed----------------------------
+json_dir = DATASET_DIR / "BTXRD" / "Annotations"
+
 # Dataset 
 dataset = CustomDataset(
-    image_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/patched_BTXRD",
-    json_dir="/Users/bartu/Desktop/Bartu/RCI/3.Semester/ADLM/bone-tumour-classification/data/dataset/BTXRD/Annotations",
+    image_dir=str(image_dir),
+    json_dir=str(json_dir),
     transform=transform
 )
 
