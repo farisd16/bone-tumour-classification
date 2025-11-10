@@ -11,11 +11,10 @@ from PIL import Image
 import datetime
 from data.custom_dataset_class import CustomDataset 
 from collections import Counter
-from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 from pathlib import Path
-
+import wandb
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -26,6 +25,7 @@ base_dir = "checkpoints"
 os.makedirs(base_dir, exist_ok=True)
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 run_dir = os.path.join(base_dir, f"run_{timestamp}")
+best_model_path = os.path.join(run_dir, "best_model.pth")
 os.makedirs(run_dir, exist_ok=True)
 
 writer = SummaryWriter(log_dir=run_dir)
@@ -85,11 +85,6 @@ train_idx, temp_idx = next(sss.split(indices, targets))
 sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
 #val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
 val_rel, test_rel = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
-# print("temp_idx")
-# print(len(temp_idx))
-# print(temp_idx)
-# print("val_rel")
-# print(val_rel)
 val_idx = temp_idx[val_rel]
 test_idx = temp_idx[test_rel]
 
@@ -111,12 +106,10 @@ val_ds_full  = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), t
 
 train_dataset = Subset(train_ds_full, split_indices["train"])
 val_dataset   = Subset(val_ds_full, split_indices["val"])
-#test_dataset  = torch.utils.data.Subset(dataset, split_indices["test"])
 
 # === Dataloaders ===
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_dataloader   = DataLoader(val_dataset, batch_size=16, shuffle=False)
-#test_dataloader  = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 # Model
 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
@@ -140,7 +133,9 @@ if weighted_cross_entropy:
 else: 
     criterion = nn.CrossEntropyLoss()
 
-optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+lr = 1e-4
+weight_decay = 1e-5
+optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, mode="min", factor=0.5, patience=2
 )
@@ -148,6 +143,19 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 # Training loop
 num_epochs = 20
 best_val_acc = 0.0
+
+# WandB run
+run = wandb.init(
+    entity="faris-demirovic-tum-technical-university-of-munich",
+    project="bone-tumor-classification",
+    config={
+        "learning_rate": lr,
+        "weight_decay": weight_decay,
+        "architecture": "ResNet34",
+        "epochs": num_epochs,
+    },
+    name=f"resnet_{timestamp}",
+)
 
 for epoch in range(num_epochs):
     model.train()
@@ -202,11 +210,27 @@ for epoch in range(num_epochs):
     writer.add_scalar("Accuracy/Train", train_acc, epoch)
     writer.add_scalar("Accuracy/Val", val_acc, epoch)
 
+    # Log to WandB
+    run.log(
+        {
+            "Loss/Train": avg_train_loss,
+            "Loss/Val": avg_val_loss,
+            "Accuracy/Train": train_acc,
+            "Accuracy/Val": val_acc,
+        }
+    )
+
     # Save best model
     if val_acc > best_val_acc:
         best_val_acc = val_acc
-        torch.save(model.state_dict(), f"{run_dir}/best_model.pth")
-        print("Saved new best model")
+        torch.save(model.state_dict(), best_model_path)
+        print("✅ Saved new best model")
+
+artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
+artifact.add_file(best_model_path)
+artifact.add_file(split_save_path)
+run.log_artifact(artifact)
 
 writer.close()
+run.finish()
 print("Training complete")

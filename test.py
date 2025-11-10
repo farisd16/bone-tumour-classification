@@ -5,7 +5,14 @@ from torchvision import transforms, models
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from data.custom_dataset_class import CustomDataset
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import (
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    accuracy_score,
+    recall_score,
+    balanced_accuracy_score,
+) 
 import seaborn as sns
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
@@ -13,6 +20,7 @@ import json
 import numpy as np
 from metrics import confusionMatrix
 from pathlib import Path
+import wandb
 
 # Device 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -20,14 +28,20 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Paths 
 base_dir = "checkpoints"
-run_dir = os.path.join(base_dir, "run_2025-11-10_12-05-24")  
+# TODO: Replace hardcoding with CLI argument
+#run_name = "resnet_2025-11-10_13-08-10" #run_2025-11-10_13-08-10
+timestamp = "2025-11-10_13-08-10"
+run_dir_name = f"run_{timestamp}"
+wandb_display_name = f"resnet_{timestamp}"
+run_dir = os.path.join(base_dir, run_dir_name)  
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
 # Transformations (no augmentation, only normalization) 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5]),
+    transforms.Normalize(mean=[0.5], std=[0.5])
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 # Dataset (dynamic, repo-relative)
@@ -73,6 +87,24 @@ total = 0
 all_preds = []
 all_labels = []
 
+api = wandb.Api()
+runs = api.runs(
+    "faris-demirovic-tum-technical-university-of-munich/bone-tumor-classification",
+    filters={"display_name": wandb_display_name},
+)
+if len(runs) == 0:
+    print("Error: No wandb runs found with given name")
+    exit()
+if len(runs) > 1:
+    print("Warning: More than one wandb run found with given name")
+run_id = runs[0].id
+test_run = wandb.init(
+    entity="faris-demirovic-tum-technical-university-of-munich",
+    project="bone-tumor-classification",
+    id=run_id,
+    resume="must",
+    job_type="test",
+)
 
 with torch.no_grad():
     for images, labels in tqdm(test_dataloader, desc="[Testing]"):
@@ -95,3 +127,27 @@ print(f"\nTest Loss: {avg_test_loss:.4f} | Test Accuracy: {test_acc:.2f}%")
 
 
 confusionMatrix(all_labels, all_preds, run_dir)
+
+precision_weighted = precision_score(all_labels, all_preds, average="weighted")
+recall_weighted = recall_score(all_labels, all_preds, average="weighted")
+f1_weighted = f1_score(all_labels, all_preds, average="weighted")
+accuracy = accuracy_score(all_labels, all_preds)
+balanced_accuracy = balanced_accuracy_score(all_labels, all_preds)
+
+print("Weighted Precision:", precision_weighted)
+print("Weighted Recall:", recall_weighted)
+print("Weighted F1:", f1_weighted)
+print("Accuracy:", accuracy)
+print("Balanced Accuracy:", balanced_accuracy)
+
+test_run.log(
+    {
+        "Weighted Precision": precision_weighted,
+        "Weighted Recall": recall_weighted,
+        "Weighted F1": f1_weighted,
+        "Accuracy": accuracy,
+        "Balanced Accuracy": balanced_accuracy,
+    }
+)
+
+test_run.finish()
