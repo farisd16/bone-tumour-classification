@@ -56,7 +56,6 @@ dataset = CustomDataset(
 
 # Load split indices from training
 with open(f"{run_dir}/data_split.json", "r") as f:
->>>>>>> main
     split_indices = json.load(f)
 
 test_indices = split_indices["test"]

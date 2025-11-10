@@ -15,6 +15,7 @@ from data.custom_dataset_class import CustomDataset
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 import wandb
+
 from config import WANDB_ENTITY, WANDB_PROJECT
 
 
@@ -123,7 +124,7 @@ val_ds_full = CustomDataset(
 train_dataset = Subset(train_ds_full, split_indices["train"])
 val_dataset = Subset(val_ds_full, split_indices["val"])
 
-# Dataloaders 
+# Dataloaders
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 
@@ -197,7 +198,7 @@ for epoch in range(num_epochs):
     train_acc = 100 * correct / total
     avg_train_loss = train_loss / len(train_dataloader)
 
-    # Validation 
+    # Validation
     model.eval()
     val_loss = 0.0
     val_correct, val_total = 0, 0
