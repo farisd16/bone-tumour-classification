@@ -6,13 +6,17 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms, models
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+from PIL import Image
+import datetime
+from data.custom_dataset_class import CustomDataset 
+from collections import Counter
+import numpy as np
+from sklearn.model_selection import StratifiedShuffleSplit
+from pathlib import Path
 import wandb
-
-from data.custom_dataset_class import CustomDataset
-
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,68 +35,84 @@ os.makedirs(run_dir, exist_ok=True)
 writer = SummaryWriter(log_dir=run_dir)
 
 # Transformations
-train_transform = transforms.Compose(
-    [
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(degrees=15),
-        # Color jitter: brightness, contrast, saturation, hue
-        transforms.ColorJitter(
-            brightness=0.2,  # ±20% brightness variation
-            contrast=0.2,  # ±20% contrast variation
-            saturation=0.2,  # ±20% saturation variation
-            hue=0.1,  # ±0.1 hue shift
-        ),
-        transforms.RandomPerspective(
-            distortion_scale=0.2, p=0.5
-        ),  # Random perspective distortion (scale 0.2, probability 0.5)
-        transforms.GaussianBlur(kernel_size=3),
-        transforms.ToTensor(),
-        # TODO: Adjust the mean and std to match pretrained dataset
-        transforms.Normalize(
-            mean=[0.5], std=[0.5]
-        ),  # Normalize to mean=0 (and std=1 by default)
-    ]
+# - Train: with augmentations
+# - Val/Test: deterministic only
+train_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.RandomHorizontalFlip(p=0.5),
+    transforms.RandomRotation(degrees=15),    
+    
+    # Color jitter: brightness, contrast, saturation, hue
+    transforms.ColorJitter(
+        brightness=0.2,     # ±20% brightness variation
+        contrast=0.2,       # ±20% contrast variation
+        saturation=0.2,     # ±20% saturation variation
+        hue=0.1             # ±0.1 hue shift
+    ),
+    transforms.RandomPerspective(distortion_scale=0.2, p=0.5),  # Random perspective distortion (scale 0.2, probability 0.5)
+    transforms.GaussianBlur(kernel_size=3),   
+    transforms.ToTensor(),
+        
+    transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to mean=0 (and std=1 by default)
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+val_transform = transforms.Compose([
+    transforms.Resize((224,224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to mean=0 (and std=1 by default)
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+# Dataset (dynamic, repo-relative)
+ROOT = Path(__file__).resolve().parent
+DATASET_DIR = ROOT / "data" / "dataset"
+image_dir = DATASET_DIR / "patched_BTXRD_merged" #--------------------------------------------------Folder might have to be changed---------------------------------------------------------
+json_dir = DATASET_DIR / "BTXRD" / "Annotations"
+
+# Build a base dataset to create splits (no transform needed for indexing)
+dataset_base = CustomDataset(
+    image_dir=str(image_dir),
+    json_dir=str(json_dir),
+    transform=None
 )
 
-val_transform = transforms.Compose(
-    [
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        # TODO: Adjust the mean and std to match pretrained dataset
-        transforms.Normalize(
-            mean=[0.5], std=[0.5]
-        ),  # Normalize to mean=0 (and std=1 by default)
-    ]
-)
+#targets = [label for _, label in dataset_base]
+targets = np.array([dataset_base.class_to_idx[label] for _, label in dataset_base.samples])
+indices = np.arange(len(dataset_base))
 
+# Stratified shuffling 
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+train_idx, temp_idx = next(sss.split(indices, targets))
 
-# Dataset
-dataset_folder_path = os.path.join("data", "dataset")
-dataset = CustomDataset(
-    image_dir=os.path.join(dataset_folder_path, "patched_BTXRD"),
-    json_dir=os.path.join(dataset_folder_path, "BTXRD", "Annotations"),
-)
+sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
+#val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
+val_rel, test_rel = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
+val_idx = temp_idx[val_rel]
+test_idx = temp_idx[test_rel]
 
-# Train val test dataset
-train_dataset, val_dataset, test_dataset = random_split(dataset, [0.8, 0.1, 0.1])
-train_dataset.transform = train_transform
-val_dataset.transform = val_transform
-
-# Save the split indices
 split_indices = {
-    "train": train_dataset.indices,
-    "val": val_dataset.indices,
-    "test": test_dataset.indices,
+    "train": train_idx.tolist(),
+    "val": val_idx.tolist(),
+    "test": test_idx.tolist(),
 }
 
-split_path = os.path.join(run_dir, "data_split.json")
-with open(split_path, "w") as f:
-    json.dump(split_indices, f)
+split_save_path = "data_split.json"
 
-# Train val test dataloader
+with open(split_save_path, "w") as f:
+    json.dump(split_indices, f)
+print(f"Saved split to {split_save_path}")
+
+# === Create subsets using the same indices ===
+train_ds_full = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=train_transform)
+val_ds_full  = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=val_transform)
+
+train_dataset = Subset(train_ds_full, split_indices["train"])
+val_dataset   = Subset(val_ds_full, split_indices["val"])
+
+# === Dataloaders ===
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+val_dataloader   = DataLoader(val_dataset, batch_size=16, shuffle=False)
 
 # Model
 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
@@ -102,8 +122,20 @@ model.fc = nn.Sequential(
 )
 model.to(device)
 
-# Loss, Optimizere, Scheduler
-criterion = nn.CrossEntropyLoss()
+# (Weighted) Cross Entropy Loss, Optimizer, Scheduler
+weighted_cross_entropy = False
+
+if weighted_cross_entropy: 
+    targets = [label for _, label in train_dataset]  
+    #train_targets = targets[train_idx]
+    class_counts = Counter(targets)
+    weights = 1.0 / np.array([class_counts[i] for i in range(7)])
+    weights = weights / weights.sum() * 7
+    class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+else: 
+    criterion = nn.CrossEntropyLoss()
+
 lr = 1e-4
 weight_decay = 1e-5
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -196,16 +228,25 @@ for epoch in range(num_epochs):
         }
     )
 
+    # Log to WandB
+    run.log(
+        {
+            "Loss/Train": avg_train_loss,
+            "Loss/Val": avg_val_loss,
+            "Accuracy/Train": train_acc,
+            "Accuracy/Val": val_acc,
+        }
+    )
+
     # Save best model
     if val_acc > best_val_acc:
         best_val_acc = val_acc
-
         torch.save(model.state_dict(), best_model_path)
         print("✅ Saved new best model")
 
 artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
 artifact.add_file(best_model_path)
-artifact.add_file(split_path)
+artifact.add_file(split_save_path)
 run.log_artifact(artifact)
 
 writer.close()

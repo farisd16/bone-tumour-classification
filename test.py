@@ -14,11 +14,15 @@ from sklearn.metrics import (
     accuracy_score,
     recall_score,
     balanced_accuracy_score,
-)
+) 
 import seaborn as sns
 import matplotlib.pyplot as plt
+from torch.utils.data import Subset
+import json 
+import numpy as np
+from metrics import confusionMatrix
+from pathlib import Path
 import wandb
-
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -27,30 +31,34 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Paths
 base_dir = "checkpoints"
 # TODO: Replace hardcoding with CLI argument
-run_name = "resnet_2025-11-10_11-02-01"
-run_dir = os.path.join(base_dir, run_name)
+run_name = "resnet_2025-11-10_13-08-10" #run_2025-11-10_13-08-10
+run_dir = os.path.join(base_dir, run_name)  
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
-# Transformations (no augmentation, only normalization)
-transform = transforms.Compose(
-    [
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        # TODO: Adjust the mean and std to match pretrained dataset
-        transforms.Normalize(mean=[0.5], std=[0.5]),
-    ]
-)
+# Transformations (no augmentation, only normalization) 
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+# Dataset (dynamic, repo-relative)
+ROOT = Path(__file__).resolve().parent
+DATASET_DIR = ROOT / "data" / "dataset"
+image_dir = DATASET_DIR / "patched_BTXRD_merged"  #--------------------Folder might have to be changed----------------------------
+json_dir = DATASET_DIR / "BTXRD" / "Annotations"
 
 # Dataset
 dataset_folder_path = os.path.join("data", "dataset")
 dataset = CustomDataset(
-    image_dir=os.path.join(dataset_folder_path, "patched_BTXRD"),
-    json_dir=os.path.join(dataset_folder_path, "BTXRD", "Annotations"),
-    transform=transform,
+    image_dir=str(image_dir),
+    json_dir=str(json_dir),
+    transform=transform
 )
 
-# Load split indices from training
-with open(os.path.join(run_dir, "data_split.json"), "r") as f:
+# Load split indices from training 
+with open("data_split.json", "r") as f:
     split_indices = json.load(f)
 
 test_indices = split_indices["test"]
@@ -118,15 +126,7 @@ test_acc = 100 * correct / total
 print(f"\nTest Loss: {avg_test_loss:.4f} | Test Accuracy: {test_acc:.2f}%")
 
 
-cm = confusion_matrix(all_labels, all_preds)
-
-plt.figure(figsize=(7, 5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-plt.xlabel("Predicted")
-plt.ylabel("True")
-plt.title("Confusion Matrix")
-plt.tight_layout()
-plt.show()
+confusionMatrix(all_labels, all_preds, run_dir)
 
 precision_weighted = precision_score(all_labels, all_preds, average="weighted")
 recall_weighted = recall_score(all_labels, all_preds, average="weighted")
