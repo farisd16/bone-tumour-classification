@@ -228,16 +228,6 @@ for epoch in range(num_epochs):
         }
     )
 
-    # Log to WandB
-    run.log(
-        {
-            "Loss/Train": avg_train_loss,
-            "Loss/Val": avg_val_loss,
-            "Accuracy/Train": train_acc,
-            "Accuracy/Val": val_acc,
-        }
-    )
-
     # Save best model
     if val_acc > best_val_acc:
         best_val_acc = val_acc

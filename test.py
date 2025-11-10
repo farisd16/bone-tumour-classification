@@ -31,7 +31,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Paths
 base_dir = "checkpoints"
 # TODO: Replace hardcoding with CLI argument
-run_name = "resnet_2025-11-10_13-08-10" #run_2025-11-10_13-08-10
+run_name = "resnet_2025-11-10_13-45-11" #run_2025-11-10_13-08-10 checkpoints/
 run_dir = os.path.join(base_dir, run_name)  
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
