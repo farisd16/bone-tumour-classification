@@ -1,5 +1,6 @@
 import os
 import json
+import argparse
 
 import torch
 import torch.nn as nn
@@ -24,15 +25,29 @@ from metrics import confusionMatrix
 from pathlib import Path
 import wandb
 
+"""
+Test your training by running
+e.g. python test.py --run-name resnet_2025-11-10_13-45-11
+resnet_2025-11-10_13-45-11 is an example for a training run
+"""
+
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # Paths
 base_dir = "checkpoints"
-# TODO: Replace hardcoding with CLI argument
-run_name = "resnet_2025-11-10_13-45-11" #resnet_2025-11-10_13-45-11
-run_dir = os.path.join(base_dir, run_name)  
+
+# Parse run name from CLI
+parser = argparse.ArgumentParser(description="Test a trained model by run name.")
+parser.add_argument(
+    "--run-name",
+    required=True,
+    help="W&B display name and corresponding checkpoint folder inside 'checkpoints'",
+)
+args = parser.parse_args()
+run_name = args.run_name
+run_dir = os.path.join(base_dir, run_name)
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
 # Transformations (no augmentation, only normalization) 
