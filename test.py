@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-
+import argparse
 import torch
 import torch.nn as nn
 from torchvision import transforms, models
@@ -21,14 +21,28 @@ import wandb
 from utils import display_confusion_matrix
 from config import WANDB_ENTITY, WANDB_PROJECT
 
+"""
+Test your training by running
+e.g. python test.py --run-name resnet_2025-11-10_13-45-11
+resnet_2025-11-10_13-45-11 is an example for a training run
+"""
+
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Paths
-checkpoints_base_dir = "checkpoints"
-# TODO: Replace hardcoding with CLI argument
-run_name = "resnet_2025-11-10_14-40-51"
-run_dir = os.path.join(checkpoints_base_dir, run_name)
+checkoint_base_dir = "checkpoints"
+
+# Parse run name from CLI
+parser = argparse.ArgumentParser(description="Test a trained model by run name.")
+parser.add_argument(
+    "--run-name",
+    required=True,
+    help="W&B display name and corresponding checkpoint folder inside 'checkpoints'",
+)
+args = parser.parse_args()
+run_name = args.run_name
+run_dir = os.path.join(checkoint_base_dir, run_name)
 best_model_path = os.path.join(run_dir, "best_model.pth")
 
 # Transformations (no augmentation, only normalization)

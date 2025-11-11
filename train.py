@@ -18,6 +18,18 @@ import wandb
 
 from config import WANDB_ENTITY, WANDB_PROJECT
 
+import argparse
+from early_stopping import EarlyStopper
+
+# CLI args (early stopping)
+parser = argparse.ArgumentParser()
+parser.add_argument("--early-stop", action="store_true",
+                    help="Enable early stopping on validation loss")
+parser.add_argument("--early-stop-patience", type=int, default=5,
+                    help="Epochs without improvement before stopping")
+parser.add_argument("--early-stop-min-delta", type=float, default=0.0,
+                    help="Minimum improvement in val loss to reset patience")
+args = parser.parse_args()
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -158,8 +170,17 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 )
 
 # Training loop
-num_epochs = 20
+num_epochs = 30
 best_val_acc = 0.0
+
+# Early stopping state
+if args.early_stop:
+    best_val_loss = float("inf")
+    early_stopper = EarlyStopper(patience=args.early_stop_patience,
+                                 min_delta=args.early_stop_min_delta)
+else:
+    best_val_loss = None
+    early_stopper = None
 
 # WandB run
 run = wandb.init(
@@ -249,10 +270,27 @@ for epoch in range(num_epochs):
         torch.save(model.state_dict(), best_model_path)
         print("Saved new best model")
 
-artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
-artifact.add_file(best_model_path)
-artifact.add_file(split_save_path)
-run.log_artifact(artifact)
+    artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
+    artifact.add_file(best_model_path)
+    artifact.add_file(split_save_path)
+    run.log_artifact(artifact)
+
+    # Early stopping check (based on validation loss)
+    if args.early_stop:
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+        should_stop, improved = early_stopper.step(avg_val_loss)
+        if improved and run is not None:
+            run.summary["best_val_loss"] = early_stopper.best
+        if should_stop:
+            print(
+                f"Early stopping: no val loss improvement in {args.early_stop_patience} epochs. "
+                f"Best val loss: {early_stopper.best:.4f}"
+            )
+            if run is not None:
+                run.summary["early_stopped"] = True
+                run.summary["early_stop_epoch"] = epoch + 1
+            break
 
 writer.close()
 run.finish()
