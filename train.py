@@ -42,11 +42,16 @@ run_dir = os.path.join(checkpoints_base_dir, f"resnet_{timestamp}")
 best_model_path = os.path.join(run_dir, "best_model.pth")
 os.makedirs(run_dir, exist_ok=True)
 
+DATASET_DIR = os.path.join("data", "dataset")
+image_dir = (
+    Path(DATASET_DIR) / "patched_BTXRD_merged"
+)  # Folder might have to be changed
+json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
 # TensorBoard writer
 writer = SummaryWriter(log_dir=run_dir)
 
-# Transformations
+# ==============================Transformations====================================
 # - Train: with augmentations
 # - Val/Test: deterministic only
 train_transform = transforms.Compose(
@@ -86,12 +91,6 @@ val_transform = transforms.Compose(
     ]
 )
 
-DATASET_DIR = os.path.join("data", "dataset")
-image_dir = (
-    Path(DATASET_DIR) / "patched_BTXRD_merged"
-)  # Folder might have to be changed
-json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
-
 # Build a base dataset to create splits (no transform needed for indexing)
 dataset_base = CustomDataset(
     image_dir=str(image_dir), json_dir=str(json_dir), transform=None
@@ -103,7 +102,7 @@ targets = np.array(
 )
 indices = np.arange(len(dataset_base))
 
-# Stratified shuffling
+# ============================ Stratified shuffling ==========================================
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
 train_idx, temp_idx = next(sss.split(indices, targets))
 
@@ -125,7 +124,7 @@ with open(split_save_path, "w") as f:
     json.dump(split_indices, f)
 print(f"Saved split to {split_save_path}")
 
-# === Create subsets using the same indices ===
+# ======================= Create subsets using the same indices =============================
 train_ds_full = CustomDataset(
     image_dir=str(image_dir), json_dir=str(json_dir), transform=train_transform
 )
@@ -136,11 +135,11 @@ val_ds_full = CustomDataset(
 train_dataset = Subset(train_ds_full, split_indices["train"])
 val_dataset = Subset(val_ds_full, split_indices["val"])
 
-# Dataloaders
+# =====================================Dataloaders==========================================
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 
-# Model
+# =====================================Model================================================
 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
 model.fc = nn.Sequential(
     nn.Dropout(0.5),
@@ -169,7 +168,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, mode="min", factor=0.5, patience=2
 )
 
-# Training loop
+# ===================================== Training loop ===========================================
 num_epochs = 30
 best_val_acc = 0.0
 
