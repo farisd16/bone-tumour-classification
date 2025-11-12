@@ -7,8 +7,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms, models
-from torch.utils.data import DataLoader, Subset
+from torchvision import models
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from data.custom_dataset_class import CustomDataset
@@ -19,16 +18,21 @@ import wandb
 from config import WANDB_ENTITY, WANDB_PROJECT
 
 import argparse
-from early_stopping import EarlyStopper
+from utils import EarlyStopper
+from train_utils import make_transforms, build_splits_and_loaders
 
 # CLI args (early stopping)
 parser = argparse.ArgumentParser()
-parser.add_argument("--early-stop", action="store_true",
+parser.add_argument("--early-stop", action="store_true",                            # default is false, when called then true
                     help="Enable early stopping on validation loss")
 parser.add_argument("--early-stop-patience", type=int, default=5,
                     help="Epochs without improvement before stopping")
 parser.add_argument("--early-stop-min-delta", type=float, default=0.0,
                     help="Minimum improvement in val loss to reset patience")
+parser.add_argument("--weighted-ce", action="store_true",                           # default is false, when called then true
+                    help="Use class-weighted cross entropy loss")
+parser.add_argument("--apply-minority-aug", action="store_true",                    # default is false, when called then true
+                    help="Apply stronger augmentation only to minority classes")
 args = parser.parse_args()
 
 # Device
@@ -51,93 +55,24 @@ json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 # TensorBoard writer
 writer = SummaryWriter(log_dir=run_dir)
 
-# ==============================Transformations====================================
-# - Train: with augmentations
-# - Val/Test: deterministic only
-train_transform = transforms.Compose(
-    [
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(degrees=15),
-        # Color jitter: brightness, contrast, saturation, hue
-        transforms.ColorJitter(
-            brightness=0.2,  # ±20% brightness variation
-            contrast=0.2,  # ±20% contrast variation
-            saturation=0.2,  # ±20% saturation variation
-            hue=0.1,  # ±0.1 hue shift
-        ),
-        transforms.RandomPerspective(
-            distortion_scale=0.2, p=0.5
-        ),  # Random perspective distortion (scale 0.2, probability 0.5)
-        transforms.GaussianBlur(kernel_size=3),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.5], std=[0.5]
-        ),  # Normalize to mean=0 (and std=1 by default)
-        # TODO: Investigate if normalization should be done like with ResNet
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ]
+train_transform, val_transform = make_transforms()
+
+(
+    train_dataset,
+    val_dataset,
+    train_dataloader,
+    val_dataloader,
+    split_save_path,
+    split_indices,
+) = build_splits_and_loaders(
+    image_dir=str(image_dir),
+    json_dir=str(json_dir),
+    run_dir=run_dir,
+    batch_size=16,
+    test_size=0.2,
+    random_state=42,
+    apply_minority_aug=args.apply_minority_aug,
 )
-
-val_transform = transforms.Compose(
-    [
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.5], std=[0.5]
-        ),  # Normalize to mean=0 (and std=1 by default)
-        # TODO: Investigate if normalization should be done like with ResNet
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ]
-)
-
-# Build a base dataset to create splits (no transform needed for indexing)
-dataset_base = CustomDataset(
-    image_dir=str(image_dir), json_dir=str(json_dir), transform=None
-)
-
-# targets = [label for _, label in dataset_base]
-targets = np.array(
-    [dataset_base.class_to_idx[label] for _, label in dataset_base.samples]
-)
-indices = np.arange(len(dataset_base))
-
-# ============================ Stratified shuffling ==========================================
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-train_idx, temp_idx = next(sss.split(indices, targets))
-
-sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
-# val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
-val_rel, test_rel = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
-val_idx = temp_idx[val_rel]
-test_idx = temp_idx[test_rel]
-
-split_indices = {
-    "train": train_idx.tolist(),
-    "val": val_idx.tolist(),
-    "test": test_idx.tolist(),
-}
-
-split_save_path = f"{run_dir}/data_split.json"
-
-with open(split_save_path, "w") as f:
-    json.dump(split_indices, f)
-print(f"Saved split to {split_save_path}")
-
-# ======================= Create subsets using the same indices =============================
-train_ds_full = CustomDataset(
-    image_dir=str(image_dir), json_dir=str(json_dir), transform=train_transform
-)
-val_ds_full = CustomDataset(
-    image_dir=str(image_dir), json_dir=str(json_dir), transform=val_transform
-)
-
-train_dataset = Subset(train_ds_full, split_indices["train"])
-val_dataset = Subset(val_ds_full, split_indices["val"])
-
-# =====================================Dataloaders==========================================
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 
 # =====================================Model================================================
 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
@@ -148,7 +83,7 @@ model.fc = nn.Sequential(
 model.to(device)
 
 # (Weighted) Cross Entropy Loss, Optimizer, Scheduler
-weighted_cross_entropy = True
+weighted_cross_entropy = args.weighted_ce
 
 if weighted_cross_entropy:
     targets = [label for _, label in train_dataset]
@@ -161,7 +96,7 @@ if weighted_cross_entropy:
 else:
     criterion = nn.CrossEntropyLoss()
 
-lr = 1e-4
+lr = 5e-5
 weight_decay = 1e-5
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
