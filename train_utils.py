@@ -3,12 +3,73 @@ import json
 from typing import Dict, Tuple, Optional, List
 
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torchvision import transforms
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import StratifiedShuffleSplit
 
 from data.custom_dataset_class import CustomDataset
 
+class EarlyStopper:
+    def __init__(self, patience=5, min_delta=0.0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.best = float("inf")
+        self.num_bad = 0
+
+    def step(self, current):
+        improved = current < (self.best - self.min_delta)
+        if improved:
+            self.best = current
+            self.num_bad = 0
+        else:
+            self.num_bad += 1
+        return self.num_bad >= self.patience, improved
+
+
+class FocalLoss(nn.Module):
+    """Multi-class focal loss with optional per-class alpha weighting."""
+
+    def __init__(self, gamma: float = 2.0, alpha: Optional[torch.Tensor] = None, reduction: str = "mean"):
+        super().__init__()
+        if reduction not in {"mean", "sum", "none"}:
+            raise ValueError("reduction must be one of: 'mean', 'sum', 'none'")
+        self.gamma = gamma
+        self.reduction = reduction
+        if alpha is not None:
+            alpha_tensor = torch.as_tensor(alpha, dtype=torch.float32)
+            self.register_buffer("alpha", alpha_tensor)
+        else:
+            self.alpha = None
+
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        if inputs.ndim != 2:
+            raise ValueError("FocalLoss expects inputs of shape (batch_size, num_classes)")
+        if targets.ndim != 1:
+            targets = targets.view(-1)
+
+        log_probs = F.log_softmax(inputs, dim=1)
+        probs = log_probs.exp()
+        targets = targets.long()
+
+        log_pt = log_probs.gather(1, targets.unsqueeze(1)).squeeze(1)
+        pt = probs.gather(1, targets.unsqueeze(1)).squeeze(1)
+        focal_term = (1 - pt).pow(self.gamma)
+
+        if self.alpha is not None:
+            alpha_t = self.alpha.to(inputs.device).gather(0, targets)
+        else:
+            alpha_t = 1.0
+
+        loss = -alpha_t * focal_term * log_pt
+
+        if self.reduction == "mean":
+            return loss.mean()
+        if self.reduction == "sum":
+            return loss.sum()
+        return loss
 
 def make_transforms() -> Tuple[transforms.Compose, transforms.Compose]:
     """Return training and validation transforms matching current pipeline."""

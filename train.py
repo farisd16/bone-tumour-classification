@@ -1,5 +1,4 @@
 import os
-import json
 import datetime
 from collections import Counter
 from pathlib import Path
@@ -10,30 +9,45 @@ import torch.optim as optim
 from torchvision import models
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from data.custom_dataset_class import CustomDataset
 import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit
 import wandb
 
 from config import WANDB_ENTITY, WANDB_PROJECT
 
 import argparse
-from utils import EarlyStopper
-from train_utils import make_transforms, build_splits_and_loaders
+from train_utils import EarlyStopper, make_transforms, build_splits_and_loaders, FocalLoss
 
-# CLI args (early stopping)
-parser = argparse.ArgumentParser()
-parser.add_argument("--early-stop", action="store_true",                            # default is false, when called then true
-                    help="Enable early stopping on validation loss")
-parser.add_argument("--early-stop-patience", type=int, default=5,
-                    help="Epochs without improvement before stopping")
-parser.add_argument("--early-stop-min-delta", type=float, default=0.0,
-                    help="Minimum improvement in val loss to reset patience")
-parser.add_argument("--weighted-ce", action="store_true",                           # default is false, when called then true
-                    help="Use class-weighted cross entropy loss")
-parser.add_argument("--apply-minority-aug", action="store_true",                    # default is false, when called then true
-                    help="Apply stronger augmentation only to minority classes")
-args = parser.parse_args()
+
+def parse_cli_args():
+    """Collect command-line options for training script."""
+    parser = argparse.ArgumentParser()
+    # ======================= Early stop loss ========================================
+    parser.add_argument("--early-stop", action="store_true",
+                        help="Enable early stopping on validation loss")
+    parser.add_argument("--early-stop-patience", type=int, default=5,
+                        help="Epochs without improvement before stopping")
+    parser.add_argument("--early-stop-min-delta", type=float, default=0.0,
+                        help="Minimum improvement in val loss to reset patience")
+    
+    # ====================== Minority Data Augmentation ==============================
+    parser.add_argument("--apply-minority-aug", action="store_true",
+                        help="Apply stronger augmentation only to minority classes")
+    
+    # ====================== Loss Function ==============================
+    parser.add_argument(
+        "--loss-fn",
+        # ce = CrossEntropy Loss | wce = WeightedCrossEntropy Loss | focal = Focal Loss | wfocal = WeightedFocal Loss
+        choices=["ce", "wce", "focal", "wfocal"], 
+        default="ce",
+        help="Loss to optimize: plain/weighted cross entropy or focal variants",
+    )
+    parser.add_argument("--focal-gamma", type=float, default=2.0,
+                        help="Gamma focusing parameter when using focal loss")
+    
+    return parser.parse_args()
+
+
+args = parse_cli_args()
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -82,19 +96,22 @@ model.fc = nn.Sequential(
 )
 model.to(device)
 
-# (Weighted) Cross Entropy Loss, Optimizer, Scheduler
-weighted_cross_entropy = args.weighted_ce
+# Loss function, optimizer, scheduler
+loss_choice = args.loss_fn
+use_class_weights = loss_choice in {"wce", "wfocal"}
+class_weights = None
 
-if weighted_cross_entropy:
+if use_class_weights:
     targets = [label for _, label in train_dataset]
-    # train_targets = targets[train_idx]
     class_counts = Counter(targets)
     weights = 1.0 / np.array([class_counts[i] for i in range(7)])
     weights = weights / weights.sum() * 7
     class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+if loss_choice in {"focal", "wfocal"}:
+    criterion = FocalLoss(gamma=args.focal_gamma, alpha=class_weights)
 else:
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 lr = 5e-5
 weight_decay = 1e-5
