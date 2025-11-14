@@ -31,8 +31,8 @@ os.makedirs(run_dir, exist_ok=True)
 
 DATASET_DIR = os.path.join("data", "dataset")
 image_dir = (
-    Path(DATASET_DIR) / "patched_BTXRD_merged"
-)  # Folder might have to be changed
+    Path(DATASET_DIR) / "final_patched_BTXRD"
+) 
 json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
 # TensorBoard writer
@@ -82,7 +82,7 @@ if loss_choice in {"focal", "wfocal"}:
 else:
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 
-lr = 5e-5
+lr = 1e-4
 weight_decay = 1e-5
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
