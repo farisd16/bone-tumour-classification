@@ -106,7 +106,7 @@ for json_name in json_files:
     plt.xlabel(f"{image_name}")
     plt.title(f"Extracted patch shape: {w, h}")
     plt.show()
-=======
+
     
     plt.subplot(122)
     image_patched_path = os.path.join(patched_dataset,image_name)
@@ -115,4 +115,4 @@ for json_name in json_files:
     plt.xlabel(f"{image_name}")
     plt.title(f"Extracted patch shape: {w, h}")
     plt.show()
->>>>>>> 4e1fe37 (changed the plotting section at the end)
+
