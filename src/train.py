@@ -12,39 +12,11 @@ import numpy as np
 import wandb
 from config import WANDB_ENTITY, WANDB_PROJECT
 import argparse
-
 from train_utils import EarlyStopper, make_transforms, build_splits_and_loaders, FocalLoss
+from train_utils.py import parse_cli_args
 
-def parse_cli_args():
-    """Collect command-line options for training script."""
-    parser = argparse.ArgumentParser()
-    # ======================= Early stop loss ========================================
-    parser.add_argument("--early-stop", action="store_true",
-                        help="Enable early stopping on validation loss")
-    parser.add_argument("--early-stop-patience", type=int, default=5,
-                        help="Epochs without improvement before stopping")
-    parser.add_argument("--early-stop-min-delta", type=float, default=0.0,
-                        help="Minimum improvement in val loss to reset patience")
-    
-    # ====================== Minority Data Augmentation ==============================
-    parser.add_argument("--apply-minority-aug", action="store_true",
-                        help="Apply stronger augmentation only to minority classes")
-    
-    # ====================== Loss Function ==============================
-    parser.add_argument(
-        "--loss-fn",
-        # ce = CrossEntropy Loss | wce = WeightedCrossEntropy Loss | focal = Focal Loss | wfocal = WeightedFocal Loss
-        choices=["ce", "wce", "focal", "wfocal"], 
-        default="ce",
-        help="Loss to optimize: plain/weighted cross entropy or focal variants",
-    )
-    parser.add_argument("--focal-gamma", type=float, default=2.0,
-                        help="Gamma focusing parameter when using focal loss")
-    
-    return parser.parse_args()
-
+# Arg parse
 args = parse_cli_args()
-
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
