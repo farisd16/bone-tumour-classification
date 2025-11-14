@@ -6,3 +6,4 @@ venv/
 dataset
 checkpoints
 wandb
+ddpm_bone_baseline.pt
