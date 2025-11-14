@@ -56,6 +56,7 @@ for json_name in json_files:
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     overlay = image.copy()
 
+    print(image.shape)
 
     # To store all of the tumour points
     all_pts = []
