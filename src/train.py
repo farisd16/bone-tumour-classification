@@ -3,7 +3,6 @@ import json
 import datetime
 from collections import Counter
 from pathlib import Path
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -15,11 +14,10 @@ from data.custom_dataset_class import CustomDataset
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 import wandb
-
 from config import WANDB_ENTITY, WANDB_PROJECT
-
 import argparse
 from early_stopping import EarlyStopper
+
 
 # CLI args (early stopping)
 parser = argparse.ArgumentParser()
