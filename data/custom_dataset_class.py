@@ -9,7 +9,7 @@ import numpy as np
 
 
 class CustomDataset(Dataset):
-    def __init__(self, image_dir, json_dir, transform=None):
+    def __init__(self, image_dir, json_dir, transform=None, minority_transform=None, minority_classes=None):
         """
         Args:
             image_dir (str): Folder containing patched X-ray images
@@ -30,6 +30,10 @@ class CustomDataset(Dataset):
         ]
         self.class_to_idx = {cls_name: idx for idx, cls_name in enumerate(self.classes)}
         self.transform = transform
+        # Optional: apply different transform to specified minority classes
+        self.minority_transform = minority_transform
+        # store lowercased class names for comparison; default to empty set
+        self.minority_classes = set([c.lower() for c in (minority_classes or [])])
         self.samples = []
 
         for fname in os.listdir(image_dir):
@@ -60,7 +64,11 @@ class CustomDataset(Dataset):
         img_path, label = self.samples[idx]
         image = Image.open(img_path).convert("RGB")
 
-        if self.transform:
+        # If a minority transform is provided and the sample's label is in the
+        # configured minority set, apply that; else fall back to the default transform.
+        if self.minority_transform is not None and label in self.minority_classes:
+            image = self.minority_transform(image)
+        elif self.transform:
             image = self.transform(image)
         else:
             image = transforms.Compose([
