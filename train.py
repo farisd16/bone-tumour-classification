@@ -1,5 +1,6 @@
 import os
 import datetime
+import argparse
 from collections import Counter
 from pathlib import Path
 import torch
@@ -11,12 +12,27 @@ from tqdm import tqdm
 import numpy as np
 import wandb
 from config import WANDB_ENTITY, WANDB_PROJECT
-import argparse
-from train_utils import EarlyStopper, make_transforms, build_splits_and_loaders, FocalLoss
-from train_utils.py import parse_cli_args
+from utils import EarlyStopper
 
-# Arg parse
-args = parse_cli_args()
+# CLI args (early stopping)
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--early-stop", action="store_true", help="Enable early stopping on validation loss"
+)
+parser.add_argument(
+    "--early-stop-patience",
+    type=int,
+    default=5,
+    help="Epochs without improvement before stopping",
+)
+parser.add_argument(
+    "--early-stop-min-delta",
+    type=float,
+    default=0.0,
+    help="Minimum improvement in val loss to reset patience",
+)
+args = parser.parse_args()
+
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,10 +45,41 @@ run_dir = os.path.join(checkpoints_base_dir, f"resnet_{timestamp}")
 best_model_path = os.path.join(run_dir, "best_model.pth")
 os.makedirs(run_dir, exist_ok=True)
 
+
+# TensorBoard writer
+writer = SummaryWriter(log_dir=run_dir)
+
+# Transformations
+# - Train: with augmentations
+# - Val/Test: deterministic only
+train_transform = transforms.Compose(
+    [
+        transforms.Resize((224, 224)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomRotation(degrees=15),
+        transforms.ColorJitter(
+            brightness=0.2,  # ±20% brightness variation
+            contrast=0.2,  # ±20% contrast variation
+        ),
+        transforms.RandomPerspective(
+            distortion_scale=0.2, p=0.5
+        ),  # Random perspective distortion (scale 0.2, probability 0.5)
+        transforms.GaussianBlur(kernel_size=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ]
+)
+
+val_transform = transforms.Compose(
+    [
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ]
+)
+
 DATASET_DIR = os.path.join("data", "dataset")
-image_dir = (
-    Path(DATASET_DIR) / "final_patched_BTXRD"
-) 
+image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"  # Folder might have to be changed
 json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
 # TensorBoard writer
@@ -96,8 +143,9 @@ best_val_acc = 0.0
 # Early stopping state
 if args.early_stop:
     best_val_loss = float("inf")
-    early_stopper = EarlyStopper(patience=args.early_stop_patience,
-                                 min_delta=args.early_stop_min_delta)
+    early_stopper = EarlyStopper(
+        patience=args.early_stop_patience, min_delta=args.early_stop_min_delta
+    )
 else:
     best_val_loss = None
     early_stopper = None
@@ -190,10 +238,10 @@ for epoch in range(num_epochs):
         torch.save(model.state_dict(), best_model_path)
         print("Saved new best model")
 
-    artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
-    artifact.add_file(best_model_path)
-    artifact.add_file(split_save_path)
-    run.log_artifact(artifact)
+        artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
+        artifact.add_file(best_model_path)
+        artifact.add_file(split_save_path)
+        run.log_artifact(artifact)
 
     # Early stopping check (based on validation loss)
     if args.early_stop:
