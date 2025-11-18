@@ -1,6 +1,7 @@
 import os
 import json
 import datetime
+import argparse
 from collections import Counter
 from pathlib import Path
 
@@ -17,18 +18,25 @@ from sklearn.model_selection import StratifiedShuffleSplit
 import wandb
 
 from config import WANDB_ENTITY, WANDB_PROJECT
-
-import argparse
-from early_stopping import EarlyStopper
+from utils import EarlyStopper
 
 # CLI args (early stopping)
 parser = argparse.ArgumentParser()
-parser.add_argument("--early-stop", action="store_true",
-                    help="Enable early stopping on validation loss")
-parser.add_argument("--early-stop-patience", type=int, default=5,
-                    help="Epochs without improvement before stopping")
-parser.add_argument("--early-stop-min-delta", type=float, default=0.0,
-                    help="Minimum improvement in val loss to reset patience")
+parser.add_argument(
+    "--early-stop", action="store_true", help="Enable early stopping on validation loss"
+)
+parser.add_argument(
+    "--early-stop-patience",
+    type=int,
+    default=5,
+    help="Epochs without improvement before stopping",
+)
+parser.add_argument(
+    "--early-stop-min-delta",
+    type=float,
+    default=0.0,
+    help="Minimum improvement in val loss to reset patience",
+)
 args = parser.parse_args()
 
 # Device
@@ -54,23 +62,16 @@ train_transform = transforms.Compose(
         transforms.Resize((224, 224)),
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomRotation(degrees=15),
-        # Color jitter: brightness, contrast, saturation, hue
         transforms.ColorJitter(
             brightness=0.2,  # ±20% brightness variation
             contrast=0.2,  # ±20% contrast variation
-            saturation=0.2,  # ±20% saturation variation
-            hue=0.1,  # ±0.1 hue shift
         ),
         transforms.RandomPerspective(
             distortion_scale=0.2, p=0.5
         ),  # Random perspective distortion (scale 0.2, probability 0.5)
         transforms.GaussianBlur(kernel_size=3),
         transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.5], std=[0.5]
-        ),  # Normalize to mean=0 (and std=1 by default)
-        # TODO: Investigate if normalization should be done like with ResNet
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 
@@ -78,18 +79,12 @@ val_transform = transforms.Compose(
     [
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.5], std=[0.5]
-        ),  # Normalize to mean=0 (and std=1 by default)
-        # TODO: Investigate if normalization should be done like with ResNet
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 
 DATASET_DIR = os.path.join("data", "dataset")
-image_dir = (
-    Path(DATASET_DIR) / "patched_BTXRD_merged"
-)  # Folder might have to be changed
+image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"  # Folder might have to be changed
 json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
 # Build a base dataset to create splits (no transform needed for indexing)
@@ -176,8 +171,9 @@ best_val_acc = 0.0
 # Early stopping state
 if args.early_stop:
     best_val_loss = float("inf")
-    early_stopper = EarlyStopper(patience=args.early_stop_patience,
-                                 min_delta=args.early_stop_min_delta)
+    early_stopper = EarlyStopper(
+        patience=args.early_stop_patience, min_delta=args.early_stop_min_delta
+    )
 else:
     best_val_loss = None
     early_stopper = None
@@ -270,10 +266,10 @@ for epoch in range(num_epochs):
         torch.save(model.state_dict(), best_model_path)
         print("Saved new best model")
 
-    artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
-    artifact.add_file(best_model_path)
-    artifact.add_file(split_save_path)
-    run.log_artifact(artifact)
+        artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
+        artifact.add_file(best_model_path)
+        artifact.add_file(split_save_path)
+        run.log_artifact(artifact)
 
     # Early stopping check (based on validation loss)
     if args.early_stop:

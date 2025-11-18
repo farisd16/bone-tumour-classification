@@ -2,6 +2,7 @@ import os
 import json
 from pathlib import Path
 import argparse
+
 import torch
 import torch.nn as nn
 from torchvision import transforms, models
@@ -15,7 +16,6 @@ from sklearn.metrics import (
     recall_score,
     balanced_accuracy_score,
 )
-
 import wandb
 
 from utils import display_confusion_matrix
@@ -57,9 +57,7 @@ transform = transforms.Compose(
 )
 
 DATASET_DIR = os.path.join("data", "dataset")
-image_dir = (
-    Path(DATASET_DIR) / "patched_BTXRD_merged"
-)  # Folder might have to be changed
+image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"  # Folder might have to be changed
 json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
 # Dataset
