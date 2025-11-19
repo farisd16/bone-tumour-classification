@@ -53,7 +53,7 @@ Optional folders created by scripts in this repo:
 ```
 data/
   dataset/
-    patched_BTXRD/          # Extracted patches from annotations (created)
+    final_patched_BTXRD/          # Extracted patches from annotations (created, this is the final dataset used for training and testing)
     squared_padded/         # Padded originals for 106 special cases (created)
     squared_patched_106/    # Patches from padded images (created)
     patched_BTXRD_merged/   # Merge of the two patch sets (created)
