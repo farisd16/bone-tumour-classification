@@ -1,3 +1,5 @@
+project: bone-tumor-classification
+entity: faris-demirovic-tum-technical-university-of-munich
 program: train.py
 method: bayes
 metric:
@@ -9,7 +11,7 @@ parameters:
   run_name_prefix:
     value: resnet
   learning_rate:
-    distribution: log_uniform
+    distribution: log_uniform_values
     min: 1.0e-5
     max: 3.0e-4
   weight_decay:
