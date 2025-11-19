@@ -1,293 +1,361 @@
-import os
-import json
-import datetime
 import argparse
+import datetime
+import os
 from collections import Counter
 from pathlib import Path
+from typing import Any, Dict, Optional
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms, models
-from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
+from torchvision import models
 from tqdm import tqdm
-from data.custom_dataset_class import CustomDataset
-import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit
 import wandb
 
 from config import WANDB_ENTITY, WANDB_PROJECT
-from utils import EarlyStopper
-
-# CLI args (early stopping)
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--early-stop", action="store_true", help="Enable early stopping on validation loss"
-)
-parser.add_argument(
-    "--early-stop-patience",
-    type=int,
-    default=5,
-    help="Epochs without improvement before stopping",
-)
-parser.add_argument(
-    "--early-stop-min-delta",
-    type=float,
-    default=0.0,
-    help="Minimum improvement in val loss to reset patience",
-)
-args = parser.parse_args()
-
-# Device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Folder structure and Tensorboard
-checkpoints_base_dir = "checkpoints"
-os.makedirs(checkpoints_base_dir, exist_ok=True)
-timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-run_dir = os.path.join(checkpoints_base_dir, f"resnet_{timestamp}")
-best_model_path = os.path.join(run_dir, "best_model.pth")
-os.makedirs(run_dir, exist_ok=True)
+from train_utils import EarlyStopper, build_splits_and_loaders, FocalLoss
 
 
-# TensorBoard writer
-writer = SummaryWriter(log_dir=run_dir)
-
-# Transformations
-# - Train: with augmentations
-# - Val/Test: deterministic only
-train_transform = transforms.Compose(
-    [
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(degrees=15),
-        transforms.ColorJitter(
-            brightness=0.2,  # ±20% brightness variation
-            contrast=0.2,  # ±20% contrast variation
-        ),
-        transforms.RandomPerspective(
-            distortion_scale=0.2, p=0.5
-        ),  # Random perspective distortion (scale 0.2, probability 0.5)
-        transforms.GaussianBlur(kernel_size=3),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ]
-)
-
-val_transform = transforms.Compose(
-    [
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ]
-)
-
-DATASET_DIR = os.path.join("data", "dataset")
-image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"  # Folder might have to be changed
-json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
-
-# Build a base dataset to create splits (no transform needed for indexing)
-dataset_base = CustomDataset(
-    image_dir=str(image_dir), json_dir=str(json_dir), transform=None
-)
-
-# targets = [label for _, label in dataset_base]
-targets = np.array(
-    [dataset_base.class_to_idx[label] for _, label in dataset_base.samples]
-)
-indices = np.arange(len(dataset_base))
-
-# Stratified shuffling
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-train_idx, temp_idx = next(sss.split(indices, targets))
-
-sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
-# val_idx, test_idx = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
-val_rel, test_rel = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
-val_idx = temp_idx[val_rel]
-test_idx = temp_idx[test_rel]
-
-split_indices = {
-    "train": train_idx.tolist(),
-    "val": val_idx.tolist(),
-    "test": test_idx.tolist(),
+DEFAULT_CONFIG: Dict[str, Any] = {
+    "architecture": "ResNet34",
+    "learning_rate": 5e-5,
+    "weight_decay": 1e-5,
+    "batch_size": 16,
+    "epochs": 30,
+    "dropout": 0.5,
+    "loss_fn": "ce",
+    "focal_gamma": 2.0,
+    "apply_minority_aug": False,
+    "early_stop": False,
+    "early_stop_patience": 5,
+    "early_stop_min_delta": 0.0,
+    "scheduler_factor": 0.5,
+    "scheduler_patience": 2,
+    "test_size": 0.2,
+    "random_state": 42,
+    "num_classes": 7,
+    "run_name_prefix": "resnet",
 }
 
-split_save_path = f"{run_dir}/data_split.json"
 
-with open(split_save_path, "w") as f:
-    json.dump(split_indices, f)
-print(f"Saved split to {split_save_path}")
+def str2bool(value: Any) -> bool:
+    """Convert CLI string representations into booleans."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.lower()
+        if lowered in {"true", "t", "1", "yes", "y"}:
+            return True
+        if lowered in {"false", "f", "0", "no", "n"}:
+            return False
+    raise argparse.ArgumentTypeError(f"Expected boolean value, got {value!r}")
 
-# === Create subsets using the same indices ===
-train_ds_full = CustomDataset(
-    image_dir=str(image_dir), json_dir=str(json_dir), transform=train_transform
-)
-val_ds_full = CustomDataset(
-    image_dir=str(image_dir), json_dir=str(json_dir), transform=val_transform
-)
 
-train_dataset = Subset(train_ds_full, split_indices["train"])
-val_dataset = Subset(val_ds_full, split_indices["val"])
+def parse_cli_args() -> argparse.Namespace:
+    """Collect command-line options for training script."""
+    parser = argparse.ArgumentParser()
 
-# Dataloaders
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+    # Optimization hyperparameters
+    parser.add_argument("--learning-rate", "--learning_rate", dest="learning_rate",
+                        type=float, default=DEFAULT_CONFIG["learning_rate"],
+                        help="Learning rate for the optimizer")
+    parser.add_argument("--weight-decay", "--weight_decay", dest="weight_decay",
+                        type=float, default=DEFAULT_CONFIG["weight_decay"],
+                        help="Weight decay for the optimizer")
+    parser.add_argument("--batch-size", "--batch_size", dest="batch_size",
+                        type=int, default=DEFAULT_CONFIG["batch_size"],
+                        help="Batch size for training and validation")
+    parser.add_argument("--epochs", type=int, default=DEFAULT_CONFIG["epochs"],
+                        help="Number of training epochs")
+    parser.add_argument("--dropout", type=float, default=DEFAULT_CONFIG["dropout"],
+                        help="Dropout probability before the final classification head")
+    parser.add_argument("--scheduler-factor", "--scheduler_factor", dest="scheduler_factor",
+                        type=float, default=DEFAULT_CONFIG["scheduler_factor"],
+                        help="Multiplicative factor for ReduceLROnPlateau")
+    parser.add_argument("--scheduler-patience", "--scheduler_patience", dest="scheduler_patience",
+                        type=int, default=DEFAULT_CONFIG["scheduler_patience"],
+                        help="Epochs to wait before reducing LR")
 
-# Model
-model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
-model.fc = nn.Sequential(
-    nn.Dropout(0.5),
-    nn.Linear(512, 7),
-)
-model.to(device)
+    # Dataset and splits
+    parser.add_argument("--test-size", "--test_size", dest="test_size",
+                        type=float, default=DEFAULT_CONFIG["test_size"],
+                        help="Hold-out ratio for validation/test split")
+    parser.add_argument("--random-state", "--random_state", dest="random_state",
+                        type=int, default=DEFAULT_CONFIG["random_state"],
+                        help="Random seed for data splits")
 
-# (Weighted) Cross Entropy Loss, Optimizer, Scheduler
-weighted_cross_entropy = True
-
-if weighted_cross_entropy:
-    targets = [label for _, label in train_dataset]
-    # train_targets = targets[train_idx]
-    class_counts = Counter(targets)
-    weights = 1.0 / np.array([class_counts[i] for i in range(7)])
-    weights = weights / weights.sum() * 7
-    class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
-else:
-    criterion = nn.CrossEntropyLoss()
-
-lr = 1e-4
-weight_decay = 1e-5
-optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode="min", factor=0.5, patience=2
-)
-
-# Training loop
-num_epochs = 30
-best_val_acc = 0.0
-
-# Early stopping state
-if args.early_stop:
-    best_val_loss = float("inf")
-    early_stopper = EarlyStopper(
-        patience=args.early_stop_patience, min_delta=args.early_stop_min_delta
+    # Loss configuration
+    parser.add_argument(
+        "--loss-fn", "--loss_fn",  # ce = CrossEntropy Loss | wce = WeightedCrossEntropy Loss | focal = Focal Loss | wfocal = WeightedFocal Loss
+        dest="loss_fn",
+        choices=["ce", "wce", "focal", "wfocal"],
+        default=DEFAULT_CONFIG["loss_fn"],
+        help="Loss to optimize: cross entropy variants or focal loss",
     )
-else:
-    best_val_loss = None
-    early_stopper = None
+    parser.add_argument("--focal-gamma", "--focal_gamma", dest="focal_gamma",
+                        type=float, default=DEFAULT_CONFIG["focal_gamma"],
+                        help="Gamma focusing parameter when using focal loss")
 
-# WandB run
-run = wandb.init(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT,
-    config={
-        "learning_rate": lr,
-        "weight_decay": weight_decay,
-        "architecture": "ResNet34",
-        "epochs": num_epochs,
-    },
-    name=f"resnet_{timestamp}",
-)
+    # Regularization / augmentation toggles
+    parser.add_argument("--apply-minority-aug", "--apply_minority_aug", dest="apply_minority_aug",
+                        type=str2bool, default=DEFAULT_CONFIG["apply_minority_aug"],
+                        help="Apply stronger augmentation only to minority classes")
 
-for epoch in range(num_epochs):
-    model.train()
-    train_loss = 0.0
-    correct = 0
-    total = 0
+    # Early stopping
+    parser.add_argument("--early-stop", "--early_stop", dest="early_stop",
+                        type=str2bool, default=DEFAULT_CONFIG["early_stop"],
+                        help="Enable early stopping on validation loss")
+    parser.add_argument("--early-stop-patience", "--early_stop_patience", dest="early_stop_patience",
+                        type=int, default=DEFAULT_CONFIG["early_stop_patience"],
+                        help="Epochs without improvement before stopping")
+    parser.add_argument("--early-stop-min-delta", "--early_stop_min_delta", dest="early_stop_min_delta",
+                        type=float, default=DEFAULT_CONFIG["early_stop_min_delta"],
+                        help="Minimum improvement in val loss to reset patience")
 
-    for images, labels in tqdm(
-        train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]"
-    ):
-        images, labels = images.to(device), labels.to(device)
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
+    # Bookkeeping
+    parser.add_argument("--run-name-prefix", "--run_name_prefix", dest="run_name_prefix",
+                        type=str, default=DEFAULT_CONFIG["run_name_prefix"],
+                        help="Prefix for checkpoint/run folders")
+    parser.add_argument("--num-classes", "--num_classes", dest="num_classes",
+                        help="Number of output classes")
+    parser.add_argument("--architecture", type=str, default=DEFAULT_CONFIG["architecture"],
+                        help="Backbone architecture to finetune (currently only ResNet34)")
 
-        train_loss += loss.item()
-        _, predicted = outputs.max(1)
-        total += labels.size(0)
-        correct += predicted.eq(labels).sum().item()
+    return parser.parse_args()
 
-    train_acc = 100 * correct / total
-    avg_train_loss = train_loss / len(train_dataloader)
 
-    # Validation
-    model.eval()
-    val_loss = 0.0
-    val_correct, val_total = 0, 0
+def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
+    """Convert CLI namespace into a config dict for wandb sweeps."""
+    return {
+        "learning_rate": args.learning_rate,
+        "weight_decay": args.weight_decay,
+        "batch_size": args.batch_size,
+        "epochs": args.epochs,
+        "dropout": args.dropout,
+        "loss_fn": args.loss_fn,
+        "focal_gamma": args.focal_gamma,
+        "apply_minority_aug": args.apply_minority_aug,
+        "early_stop": args.early_stop,
+        "early_stop_patience": args.early_stop_patience,
+        "early_stop_min_delta": args.early_stop_min_delta,
+        "scheduler_factor": args.scheduler_factor,
+        "scheduler_patience": args.scheduler_patience,
+        "test_size": args.test_size,
+        "random_state": args.random_state,
+        "num_classes": args.num_classes,
+        "run_name_prefix": args.run_name_prefix,
+        "architecture": args.architecture,
+    }
 
-    with torch.no_grad():
-        for images, labels in tqdm(
-            val_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Val]"
-        ):
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            val_loss += loss.item()
-            _, predicted = outputs.max(1)
-            val_total += labels.size(0)
-            val_correct += predicted.eq(labels).sum().item()
 
-    val_acc = 100 * val_correct / val_total
-    avg_val_loss = val_loss / len(val_dataloader)
+def train(config: Optional[Dict[str, Any]] = None) -> float:
+    base_config = DEFAULT_CONFIG.copy()
+    if config:
+        base_config.update(config)
 
-    scheduler.step(avg_val_loss)
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    run_name_prefix = base_config.get("run_name_prefix", DEFAULT_CONFIG["run_name_prefix"])
+    loss_tag = base_config.get("loss_fn", DEFAULT_CONFIG["loss_fn"])
+    aug_tag = "aug" if base_config.get("apply_minority_aug") else "noaug"
+    run_name = f"{run_name_prefix}_{loss_tag}_{aug_tag}_{timestamp}"
 
-    # Logging
-    print(
-        f"Epoch [{epoch + 1}/{num_epochs}] "
-        f"Train Loss: {avg_train_loss:.4f} | Train Acc: {train_acc:.2f}% "
-        f"| Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:.2f}%"
-    )
+    checkpoints_base_dir = "checkpoints"
+    os.makedirs(checkpoints_base_dir, exist_ok=True)
+    run_dir = os.path.join(checkpoints_base_dir, run_name)
+    os.makedirs(run_dir, exist_ok=True)
 
-    # Log to TensorBoard
-    writer.add_scalar("Loss/Train", avg_train_loss, epoch)
-    writer.add_scalar("Loss/Val", avg_val_loss, epoch)
-    writer.add_scalar("Accuracy/Train", train_acc, epoch)
-    writer.add_scalar("Accuracy/Val", val_acc, epoch)
+    DATASET_DIR = os.path.join("data", "dataset")
+    image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"
+    json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
-    # Log to WandB
-    run.log(
-        {
-            "Loss/Train": avg_train_loss,
-            "Loss/Val": avg_val_loss,
-            "Accuracy/Train": train_acc,
-            "Accuracy/Val": val_acc,
-        }
-    )
+    with wandb.init(
+        entity=WANDB_ENTITY,
+        project=WANDB_PROJECT,
+        config=base_config,
+        name=run_name,
+    ) as run:
+        cfg = wandb.config
+        writer = SummaryWriter(log_dir=run_dir)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Save best model
-    if val_acc > best_val_acc:
-        best_val_acc = val_acc
-        torch.save(model.state_dict(), best_model_path)
-        print("Saved new best model")
-
-        artifact = wandb.Artifact(name=f"resnet_{timestamp}", type="model")
-        artifact.add_file(best_model_path)
-        artifact.add_file(split_save_path)
-        run.log_artifact(artifact)
-
-    # Early stopping check (based on validation loss)
-    if args.early_stop:
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
-        should_stop, improved = early_stopper.step(avg_val_loss)
-        if improved and run is not None:
-            run.summary["best_val_loss"] = early_stopper.best
-        if should_stop:
-            print(
-                f"Early stopping: no val loss improvement in {args.early_stop_patience} epochs. "
-                f"Best val loss: {early_stopper.best:.4f}"
+        try:
+            (
+                train_dataset,
+                _,
+                train_dataloader,
+                val_dataloader,
+                split_save_path,
+                _,
+            ) = build_splits_and_loaders(
+                image_dir=str(image_dir),
+                json_dir=str(json_dir),
+                run_dir=run_dir,
+                batch_size=int(cfg.batch_size),
+                test_size=float(cfg.test_size),
+                random_state=int(cfg.random_state),
+                apply_minority_aug=bool(cfg.apply_minority_aug),
             )
-            if run is not None:
-                run.summary["early_stopped"] = True
-                run.summary["early_stop_epoch"] = epoch + 1
-            break
 
-writer.close()
-run.finish()
-print("Training complete")
+            architecture = cfg.architecture
+            if architecture != "ResNet34":
+                raise ValueError(f"Unsupported architecture: {architecture}")
+            model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
+            model.fc = nn.Sequential(
+                nn.Dropout(float(cfg.dropout)),
+                nn.Linear(512, int(cfg.num_classes)),
+            )
+            model.to(device)
+
+            loss_choice = cfg.loss_fn
+            use_class_weights = loss_choice in {"wce", "wfocal"}
+            class_weights = None
+
+            if use_class_weights:
+                targets = [label for _, label in train_dataset]
+                class_counts = Counter(targets)
+                weights = 1.0 / np.array([class_counts[i] for i in range(int(cfg.num_classes))])
+                weights = weights / weights.sum() * int(cfg.num_classes)
+                class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
+
+            if loss_choice in {"focal", "wfocal"}:
+                criterion = FocalLoss(gamma=float(cfg.focal_gamma), alpha=class_weights)
+            else:
+                criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+            optimizer = optim.Adam(
+                model.parameters(), lr=float(cfg.learning_rate), weight_decay=float(cfg.weight_decay)
+            )
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                mode="min",
+                factor=float(cfg.scheduler_factor),
+                patience=int(cfg.scheduler_patience),
+            )
+
+            num_epochs = int(cfg.epochs)
+            best_val_acc = 0.0
+            best_epoch = 0
+            best_model_path = os.path.join(run_dir, "best_model.pth")
+            best_model_saved = False
+
+            if bool(cfg.early_stop):
+                best_val_loss = float("inf")
+                early_stopper = EarlyStopper(
+                    patience=int(cfg.early_stop_patience), min_delta=float(cfg.early_stop_min_delta)
+                )
+            else:
+                best_val_loss = None
+                early_stopper = None
+
+            for epoch in range(num_epochs):
+                model.train()
+                train_loss = 0.0
+                correct = 0
+                total = 0
+
+                for images, labels in tqdm(
+                    train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]"
+                ):
+                    images, labels = images.to(device), labels.to(device)
+                    optimizer.zero_grad()
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+                    loss.backward()
+                    optimizer.step()
+
+                    train_loss += loss.item()
+                    _, predicted = outputs.max(1)
+                    total += labels.size(0)
+                    correct += predicted.eq(labels).sum().item()
+
+                train_acc = 100 * correct / total if total > 0 else 0.0
+                avg_train_loss = train_loss / max(len(train_dataloader), 1)
+
+                model.eval()
+                val_loss = 0.0
+                val_correct, val_total = 0, 0
+                with torch.no_grad():
+                    for images, labels in tqdm(
+                        val_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Val]"
+                    ):
+                        images, labels = images.to(device), labels.to(device)
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+                        val_loss += loss.item()
+                        _, predicted = outputs.max(1)
+                        val_total += labels.size(0)
+                        val_correct += predicted.eq(labels).sum().item()
+
+                val_acc = 100 * val_correct / val_total if val_total > 0 else 0.0
+                avg_val_loss = val_loss / max(len(val_dataloader), 1)
+
+                scheduler.step(avg_val_loss)
+
+                print(
+                    f"Epoch [{epoch + 1}/{num_epochs}] "
+                    f"Train Loss: {avg_train_loss:.4f} | Train Acc: {train_acc:.2f}% "
+                    f"| Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:.2f}%"
+                )
+
+                writer.add_scalar("Loss/Train", avg_train_loss, epoch)
+                writer.add_scalar("Loss/Val", avg_val_loss, epoch)
+                writer.add_scalar("Accuracy/Train", train_acc, epoch)
+                writer.add_scalar("Accuracy/Val", val_acc, epoch)
+
+                run.log(
+                    {
+                        "Loss/Train": avg_train_loss,
+                        "Loss/Val": avg_val_loss,
+                        "Accuracy/Train": train_acc,
+                        "Accuracy/Val": val_acc,
+                    }
+                )
+
+                if val_acc > best_val_acc:
+                    best_val_acc = val_acc
+                    best_epoch = epoch + 1
+                    torch.save(model.state_dict(), best_model_path)
+                    best_model_saved = True
+                    print("Saved new best model")
+
+                if early_stopper:
+                    if avg_val_loss < best_val_loss:
+                        best_val_loss = avg_val_loss
+                    should_stop, improved = early_stopper.step(avg_val_loss)
+                    if improved:
+                        run.summary["best_val_loss"] = early_stopper.best
+                    if should_stop:
+                        message = (
+                            f"Early stopping: no val loss improvement in {cfg.early_stop_patience} epochs. "
+                            f"Best val loss: {early_stopper.best:.4f}"
+                        )
+                        print(message)
+                        run.summary["early_stopped"] = True
+                        run.summary["early_stop_epoch"] = epoch + 1
+                        break
+
+            if best_model_saved:
+                artifact = wandb.Artifact(name=f"{run_name}_best", type="model")
+                artifact.add_file(best_model_path)
+                artifact.add_file(split_save_path)
+                run.log_artifact(artifact)
+
+            run.summary["best_val_acc"] = best_val_acc
+            run.summary["best_val_epoch"] = best_epoch
+
+            print("Training complete")
+            return best_val_acc
+        finally:
+            writer.close()
+
+
+def main() -> None:
+    args = parse_cli_args()
+    cli_config = args_to_config(args)
+    train(cli_config)
+
+
+if __name__ == "__main__":
+    main()

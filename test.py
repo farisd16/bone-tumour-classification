@@ -50,9 +50,7 @@ transform = transforms.Compose(
     [
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5]),
-        # TODO: Investigate if normalization should be done like with ResNet
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ]
 )
 
@@ -82,7 +80,13 @@ model.fc = nn.Sequential(
     nn.Dropout(0.5),
     nn.Linear(512, 7),
 )
-model.load_state_dict(torch.load(best_model_path, map_location=device))
+# Safe checkpoint load to avoid pickle execution warning
+try:
+    state_dict = torch.load(best_model_path, map_location=device, weights_only=True)
+except TypeError:
+    # Older PyTorch without weights_only: fall back
+    state_dict = torch.load(best_model_path, map_location=device)
+model.load_state_dict(state_dict)
 model.to(device)
 model.eval()
 

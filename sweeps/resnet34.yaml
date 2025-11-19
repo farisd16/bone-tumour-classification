@@ -1,0 +1,50 @@
+project: bone-tumor-classification
+entity: faris-demirovic-tum-technical-university-of-munich
+program: train.py
+method: bayes
+metric:
+  name: Accuracy/Val
+  goal: maximize
+parameters:
+  architecture:
+    value: ResNet34
+  run_name_prefix:
+    value: resnet
+  learning_rate:
+    distribution: log_uniform_values
+    min: 1.0e-5
+    max: 3.0e-4
+  weight_decay:
+    values: [0.0, 1.0e-6, 1.0e-5]
+  batch_size:
+    values: [8, 16, 32]
+  epochs:
+    value: 30
+  dropout:
+    distribution: uniform
+    min: 0.2
+    max: 0.6
+  loss_fn:
+    values: ["ce", "wce", "focal", "wfocal"]
+  focal_gamma:
+    distribution: uniform
+    min: 1.0
+    max: 4.0
+  apply_minority_aug:
+    values: [true, false]
+  early_stop:
+    values: [true, false]
+  early_stop_patience:
+    values: [5, 8, 10]
+  early_stop_min_delta:
+    value: 0.0
+  scheduler_factor:
+    value: 0.5
+  scheduler_patience:
+    values: [2, 3, 4]
+  test_size:
+    value: 0.2
+  random_state:
+    value: 42
+  num_classes:
+    value: 7
