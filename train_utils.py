@@ -82,8 +82,8 @@ def make_transforms() -> Tuple[transforms.Compose, transforms.Compose]:
             transforms.ColorJitter(
                 brightness=0.2,  # ±20% brightness variation
                 contrast=0.2,  # ±20% contrast variation
-                saturation=0.2,  # ±20% saturation variation
-                hue=0.1,  # ±0.1 hue shift
+                # saturation=0.2,  # ±20% saturation variation
+                # hue=0.1,  # ±0.1 hue shift
             ),
             transforms.RandomPerspective(
                 distortion_scale=0.2, p=0.5
@@ -119,7 +119,10 @@ def make_minority_transform() -> transforms.Compose:
             transforms.Resize((224, 224)),
             transforms.RandomHorizontalFlip(p=0.6),
             transforms.RandomRotation(degrees=25),
-            transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.1),
+            transforms.ColorJitter(
+                brightness=0.3,
+                contrast=0.3, 
+                ),
             transforms.RandomPerspective(distortion_scale=0.25, p=0.7),
             transforms.RandomAffine(degrees=0, translate=(0.05, 0.05), scale=(0.95, 1.05)),
             transforms.GaussianBlur(kernel_size=3),
