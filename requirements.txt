@@ -10,3 +10,4 @@ wandb
 tensorboard
 seaborn
 scikit-learn
+torchxrayvision
