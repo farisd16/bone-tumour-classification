@@ -107,18 +107,12 @@ python src/plot_predictions.py
 ---
 ## **▶️ How to Run SupCon Loss **
 
-1) Contrastive Pretraining (train_supcon.py)
-```
-python train_supcon.py
-```
-2) Linear Classifier Training (train_linear.py)
-```
-python train_linear.py
-```
-3) Evaluation (eval_supcon.py)
-```
-python eval_supcon.py
-```
+1) Contrastive Pretraining (run train_supcon.py)
+
+2) Linear Classifier Training (run train_linear.py)
+
+3) Evaluation (run eval_supcon.py)
+
 
 Outputs:
 - `checkpoints_supcon/<time>/encoder_supcon.pth`
