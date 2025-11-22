@@ -1,19 +1,15 @@
-# sup_contrastive.py
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-# ============================================================
-# 1. Supervised Contrastive Loss (SupConLoss)
-# ============================================================
 
+# Supervised Contrastive Loss (SupConLoss)
 class SupConLoss(nn.Module):
     """Supervised Contrastive Loss from 'Supervised Contrastive Learning' (Khosla et al., 2020)."""
     def __init__(self, temperature=0.1, contrast_mode='all', base_temperature=0.07):
         super().__init__()
-        self.temperature = temperature
+        self.temperature = temperature      # controls how much the model cares about similarity differences
         self.contrast_mode = contrast_mode
         self.base_temperature = base_temperature
 
@@ -28,6 +24,7 @@ class SupConLoss(nn.Module):
         features = F.normalize(features, p=2, dim=2)  # normalize embeddings
         batch_size = features.shape[0]
 
+        # Creates the mask to know which anchors are treated as positives
         if labels is not None:
             labels = labels.contiguous().view(-1, 1)
             mask = torch.eq(labels, labels.T).float().to(device)
@@ -65,9 +62,8 @@ class SupConLoss(nn.Module):
         return loss
 
 
-# ============================================================
-# 2. TwoViewDataset (needed for SupCon training)
-# ============================================================
+
+# TwoViewDataset (needed for SupCon training)
 
 class TwoViewDataset(torch.utils.data.Dataset):
     """
@@ -88,10 +84,8 @@ class TwoViewDataset(torch.utils.data.Dataset):
         return torch.stack([view1, view2], dim=0), label
 
 
-# ============================================================
-# 3. SupCon Model (Encoder + Projection Head)
-# ============================================================
 
+# SupCon Model (Encoder + Projection Head)
 class SupConModel(nn.Module):
     def __init__(self, encoder, feature_dim=128):
         super().__init__()
