@@ -105,6 +105,19 @@ python src/plot_predictions.py
 ```
 
 ---
+## **▶️ How to Run SupCon Loss **
+
+1. Stage 1 — Contrastive Pretraining (train_supcon.py)
+Run:
+python train_supcon.py
+2. Stage 2 — Linear Classifier Training (train_linear.py)
+Run:
+python train_linear.py
+3. Stage 3 — Evaluation (eval_supcon.py)
+Run:
+python eval_supcon.py
+Outputs include encoder_supcon.pth, classifier.pth, and evaluation metrics.
+
 
 ## **ℹ️ Notes**
 
