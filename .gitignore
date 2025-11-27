@@ -8,3 +8,4 @@ checkpoints
 wandb
 logs
 gan_training.sbatch
+btxrd_dataset.zip
