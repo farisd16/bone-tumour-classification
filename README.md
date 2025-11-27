@@ -113,3 +113,30 @@ python src/plot_predictions.py
 ```
 python data/create_csv_patched.py
 ```
+
+---
+
+## GAN Image Generation
+
+Train the conditional GAN in `gan_training.py` to synthesize additional tumor patches conditioned on tumor type, anatomy cluster, and projection view. The script reads patched crops (e.g. `data/dataset/final_patched_BTXRD/`) and metadata from `data/dataset/BTXRD/dataset.xlsx`.
+
+```
+python gan_training.py --image-root data/dataset/final_patched_BTXRD --metadata-path data/dataset/BTXRD/dataset.xlsx --epochs 150 --batch-size 12
+```
+
+Artifacts are written to `checkpoints/gan/`:
+- `samples/epoch_XXXX.png` keeps track of qualitative progress.
+- `checkpoints/generator_epoch_XXXX.pth` and `.../discriminator_epoch_XXXX.pth` store model weights inside `checkpoints/gan/checkpoints/`.
+- `training_history.pt` serializes the per-epoch generator/discriminator losses.
+
+Tune `--img-size`, `--noise-channels`, `--sample-grid-rows/cols`, or the optimizer hyperparameters to match your augmentation budget and hardware.
+
+### Exporting Synthetic Samples
+
+After training, convert a stored checkpoint into actual PNG patches with `gan_generate.py`. Images are grouped by tumor/anatomy/view under `data/dataset/gan_synthetic/` by default (e.g. `data/dataset/gan_synthetic/osteofibroma/foot/frontal/00001_osteofibroma_foot_frontal.png`).
+
+```
+python gan_generate.py --checkpoint checkpoints/gan/checkpoints/generator_epoch_0150.pth --num-images 200 --tumor-type osteofibroma
+```
+
+Adjust `--output-dir`, `--anatomy`, or `--view` to focus on specific combinations, or omit them to sample from the global metadata distribution.
