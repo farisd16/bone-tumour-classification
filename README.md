@@ -5,7 +5,7 @@ We use the **BTXRD dataset**, which contains X-ray images of different primary b
 
 ---
 
-## **🎯 Project Goals**
+## 🎯 Project Goals
 
 - Implement a **ResNet-based CNN** as a **baseline model** for tumor classification.
 - Apply and analyze **class imbalance handling techniques** such as **Weighted Loss**, **Focal Loss**, and **Data Augmentation**.
@@ -13,7 +13,7 @@ We use the **BTXRD dataset**, which contains X-ray images of different primary b
 
 ---
 
-## **🦴 Target Tumor Types**
+## 🦴 Target Tumor Types
 
 We focus on classifying **seven tumor types**:
 
@@ -27,16 +27,14 @@ We focus on classifying **seven tumor types**:
 
 ---
 
-## **🏫 About the Project**
+## 🏫 About the Project
 
 This project is part of the **Applied Deep Learning in Medicine (ADLM)** course at the  
 **Technical University of Munich (TUM)**, in collaboration with the  
 **Clinic for Orthopaedics and Sports Orthopaedics** and the  
 **Institute for AI and Informatics in Medicine**.
 
----
-
-## **⬇️ Dataset Setup**
+## ⬇️ Dataset Setup
 
 Place the BTXRD dataset under the following paths relative to the project root:
 
@@ -67,7 +65,9 @@ pip install -r requirements.txt
 
 ---
 
-## **▶️ How To Run (Preparation → Training → Testing)**
+## 📊 Classification
+
+### ▶️ How To Run (Preparation → Training → Testing)
 
 1. Extract patches from annotations
 
@@ -108,7 +108,7 @@ python src/plot_predictions.py
 
 ---
 
-## **▶️ How to Run SupCon Loss **
+### ▶️ How to Run SupCon Loss
 
 1. Contrastive Pretraining (run train_supcon.py)
 
@@ -121,10 +121,56 @@ Outputs:
 - `checkpoints_supcon/<time>/encoder_supcon.pth`
 - `checkpoints_linear/<time>/classifier.pth`
 
-## **ℹ️ Notes**
+### ℹ️ Notes
 
 - CSVs like `dataset_singlelabel.csv` are not required for training/testing in this pipeline; labels are taken from annotation JSONs. If needed for analysis, you can generate a CSV aligned to the patched images via:
 
 ```
 python data/create_csv_patched.py
 ```
+
+## 🆕 Synthetic Generation (Latent Diffusion)
+
+### Autoencoder
+
+#### 1. Train the autoencoder
+
+```
+python -m latent_diffusion.vae.train
+```
+
+#### 2. Test the autoencoder (Optional)
+
+```
+python -m latent_diffusion.vae.train --run-name <RUN_NAME>
+```
+
+#### 3. Sample from the autoencoder (Optional)
+
+```
+python -m latent_diffusion.vae.sample --run-name <RUN_NAME>
+```
+
+---
+
+**`<RUN_DIR>` is the directory of the run which you want to test, for example `train_vae_2025-12-07_17-36-29`**
+
+### Diffusion Model
+
+#### Train the diffusion model using a latent space provided by a VAE.
+
+```
+python -m latent_diffusion.diffusion.train --run-name <RUN_NAME>
+```
+
+**`<RUN_DIR>` is the directory of the VAE train run, for example `train_vae_2025-12-07_17-36-29`**
+
+### Sample
+
+```
+python -m latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run-name <LDM_RUN_NAME> --class-name <CLASS_NAME>
+```
+
+- **`<VAE_RUN_DIR>` is the directory of the VAE train run, for example `train_vae_2025-12-07_17-36-29`**
+- **`<LDM_RUN_DIR>` is the directory of the diffusion train run, for example `train_ldm_2025-12-07_17-36-29`**
+- **`<CLASS_NAME>` is the name of the tumor subtype which you wish to sample for, for example `osteochondroma`**

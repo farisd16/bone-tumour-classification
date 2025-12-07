@@ -183,6 +183,7 @@ def build_splits_and_loaders(
     apply_minority_aug: bool = False,
     minority_classes: Optional[List[str]] = None,
     minority_transform: Optional[transforms.Compose] = None,
+    transform: Optional[transforms.Compose] = None,
 ):
     """Create stratified splits, save to run_dir, and return datasets, dataloaders, and split metadata."""
     # Base dataset for splitting (no transform)
@@ -218,25 +219,39 @@ def build_splits_and_loaders(
         )
     else:
         train_ds_full = CustomDataset(
-            image_dir=str(image_dir), json_dir=str(json_dir), transform=train_t
+            image_dir=str(image_dir),
+            json_dir=str(json_dir),
+            transform=transform if transform else train_t,
         )
+
     val_ds_full = CustomDataset(
-        image_dir=str(image_dir), json_dir=str(json_dir), transform=val_t
+        image_dir=str(image_dir),
+        json_dir=str(json_dir),
+        transform=transform if transform else val_t,
+    )
+    test_ds_full = CustomDataset(
+        image_dir=str(image_dir),
+        json_dir=str(json_dir),
+        transform=transform if transform else val_t,
     )
 
     # Subsets
     train_dataset = Subset(train_ds_full, split_indices["train"])
     val_dataset = Subset(val_ds_full, split_indices["val"])
+    test_dataset = Subset(test_ds_full, split_indices["test"])
 
     # Dataloaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return (
         train_dataset,
         val_dataset,
+        test_dataset,
         train_loader,
         val_loader,
+        test_loader,
         split_save_path,
         split_indices,
     )

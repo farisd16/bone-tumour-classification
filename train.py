@@ -57,70 +57,152 @@ def parse_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     # Optimization hyperparameters
-    parser.add_argument("--learning-rate", "--learning_rate", dest="learning_rate",
-                        type=float, default=DEFAULT_CONFIG["learning_rate"],
-                        help="Learning rate for the optimizer")
-    parser.add_argument("--weight-decay", "--weight_decay", dest="weight_decay",
-                        type=float, default=DEFAULT_CONFIG["weight_decay"],
-                        help="Weight decay for the optimizer")
-    parser.add_argument("--batch-size", "--batch_size", dest="batch_size",
-                        type=int, default=DEFAULT_CONFIG["batch_size"],
-                        help="Batch size for training and validation")
-    parser.add_argument("--epochs", type=int, default=DEFAULT_CONFIG["epochs"],
-                        help="Number of training epochs")
-    parser.add_argument("--dropout", type=float, default=DEFAULT_CONFIG["dropout"],
-                        help="Dropout probability before the final classification head")
-    parser.add_argument("--scheduler-factor", "--scheduler_factor", dest="scheduler_factor",
-                        type=float, default=DEFAULT_CONFIG["scheduler_factor"],
-                        help="Multiplicative factor for ReduceLROnPlateau")
-    parser.add_argument("--scheduler-patience", "--scheduler_patience", dest="scheduler_patience",
-                        type=int, default=DEFAULT_CONFIG["scheduler_patience"],
-                        help="Epochs to wait before reducing LR")
+    parser.add_argument(
+        "--learning-rate",
+        "--learning_rate",
+        dest="learning_rate",
+        type=float,
+        default=DEFAULT_CONFIG["learning_rate"],
+        help="Learning rate for the optimizer",
+    )
+    parser.add_argument(
+        "--weight-decay",
+        "--weight_decay",
+        dest="weight_decay",
+        type=float,
+        default=DEFAULT_CONFIG["weight_decay"],
+        help="Weight decay for the optimizer",
+    )
+    parser.add_argument(
+        "--batch-size",
+        "--batch_size",
+        dest="batch_size",
+        type=int,
+        default=DEFAULT_CONFIG["batch_size"],
+        help="Batch size for training and validation",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=DEFAULT_CONFIG["epochs"],
+        help="Number of training epochs",
+    )
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        default=DEFAULT_CONFIG["dropout"],
+        help="Dropout probability before the final classification head",
+    )
+    parser.add_argument(
+        "--scheduler-factor",
+        "--scheduler_factor",
+        dest="scheduler_factor",
+        type=float,
+        default=DEFAULT_CONFIG["scheduler_factor"],
+        help="Multiplicative factor for ReduceLROnPlateau",
+    )
+    parser.add_argument(
+        "--scheduler-patience",
+        "--scheduler_patience",
+        dest="scheduler_patience",
+        type=int,
+        default=DEFAULT_CONFIG["scheduler_patience"],
+        help="Epochs to wait before reducing LR",
+    )
 
     # Dataset and splits
-    parser.add_argument("--test-size", "--test_size", dest="test_size",
-                        type=float, default=DEFAULT_CONFIG["test_size"],
-                        help="Hold-out ratio for validation/test split")
-    parser.add_argument("--random-state", "--random_state", dest="random_state",
-                        type=int, default=DEFAULT_CONFIG["random_state"],
-                        help="Random seed for data splits")
+    parser.add_argument(
+        "--test-size",
+        "--test_size",
+        dest="test_size",
+        type=float,
+        default=DEFAULT_CONFIG["test_size"],
+        help="Hold-out ratio for validation/test split",
+    )
+    parser.add_argument(
+        "--random-state",
+        "--random_state",
+        dest="random_state",
+        type=int,
+        default=DEFAULT_CONFIG["random_state"],
+        help="Random seed for data splits",
+    )
 
     # Loss configuration
     parser.add_argument(
-        "--loss-fn", "--loss_fn",  # ce = CrossEntropy Loss | wce = WeightedCrossEntropy Loss | focal = Focal Loss | wfocal = WeightedFocal Loss
+        "--loss-fn",
+        "--loss_fn",  # ce = CrossEntropy Loss | wce = WeightedCrossEntropy Loss | focal = Focal Loss | wfocal = WeightedFocal Loss
         dest="loss_fn",
         choices=["ce", "wce", "focal", "wfocal"],
         default=DEFAULT_CONFIG["loss_fn"],
         help="Loss to optimize: cross entropy variants or focal loss",
     )
-    parser.add_argument("--focal-gamma", "--focal_gamma", dest="focal_gamma",
-                        type=float, default=DEFAULT_CONFIG["focal_gamma"],
-                        help="Gamma focusing parameter when using focal loss")
+    parser.add_argument(
+        "--focal-gamma",
+        "--focal_gamma",
+        dest="focal_gamma",
+        type=float,
+        default=DEFAULT_CONFIG["focal_gamma"],
+        help="Gamma focusing parameter when using focal loss",
+    )
 
     # Regularization / augmentation toggles
-    parser.add_argument("--apply-minority-aug", "--apply_minority_aug", dest="apply_minority_aug",
-                        type=str2bool, default=DEFAULT_CONFIG["apply_minority_aug"],
-                        help="Apply stronger augmentation only to minority classes")
+    parser.add_argument(
+        "--apply-minority-aug",
+        "--apply_minority_aug",
+        dest="apply_minority_aug",
+        type=str2bool,
+        default=DEFAULT_CONFIG["apply_minority_aug"],
+        help="Apply stronger augmentation only to minority classes",
+    )
 
     # Early stopping
-    parser.add_argument("--early-stop", "--early_stop", dest="early_stop",
-                        type=str2bool, default=DEFAULT_CONFIG["early_stop"],
-                        help="Enable early stopping on validation loss")
-    parser.add_argument("--early-stop-patience", "--early_stop_patience", dest="early_stop_patience",
-                        type=int, default=DEFAULT_CONFIG["early_stop_patience"],
-                        help="Epochs without improvement before stopping")
-    parser.add_argument("--early-stop-min-delta", "--early_stop_min_delta", dest="early_stop_min_delta",
-                        type=float, default=DEFAULT_CONFIG["early_stop_min_delta"],
-                        help="Minimum improvement in val loss to reset patience")
+    parser.add_argument(
+        "--early-stop",
+        "--early_stop",
+        dest="early_stop",
+        type=str2bool,
+        default=DEFAULT_CONFIG["early_stop"],
+        help="Enable early stopping on validation loss",
+    )
+    parser.add_argument(
+        "--early-stop-patience",
+        "--early_stop_patience",
+        dest="early_stop_patience",
+        type=int,
+        default=DEFAULT_CONFIG["early_stop_patience"],
+        help="Epochs without improvement before stopping",
+    )
+    parser.add_argument(
+        "--early-stop-min-delta",
+        "--early_stop_min_delta",
+        dest="early_stop_min_delta",
+        type=float,
+        default=DEFAULT_CONFIG["early_stop_min_delta"],
+        help="Minimum improvement in val loss to reset patience",
+    )
 
     # Bookkeeping
-    parser.add_argument("--run-name-prefix", "--run_name_prefix", dest="run_name_prefix",
-                        type=str, default=DEFAULT_CONFIG["run_name_prefix"],
-                        help="Prefix for checkpoint/run folders")
-    parser.add_argument("--num-classes", "--num_classes", dest="num_classes",
-                        help="Number of output classes")
-    parser.add_argument("--architecture", type=str, default=DEFAULT_CONFIG["architecture"],
-                        help="Backbone architecture to finetune (currently only ResNet34)")
+    parser.add_argument(
+        "--run-name-prefix",
+        "--run_name_prefix",
+        dest="run_name_prefix",
+        type=str,
+        default=DEFAULT_CONFIG["run_name_prefix"],
+        help="Prefix for checkpoint/run folders",
+    )
+    parser.add_argument(
+        "--num-classes",
+        "--num_classes",
+        dest="num_classes",
+        help="Number of output classes",
+    )
+    parser.add_argument(
+        "--architecture",
+        type=str,
+        default=DEFAULT_CONFIG["architecture"],
+        help="Backbone architecture to finetune (currently only ResNet34)",
+    )
 
     return parser.parse_args()
 
@@ -155,7 +237,9 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
         base_config.update(config)
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    run_name_prefix = base_config.get("run_name_prefix", DEFAULT_CONFIG["run_name_prefix"])
+    run_name_prefix = base_config.get(
+        "run_name_prefix", DEFAULT_CONFIG["run_name_prefix"]
+    )
     loss_tag = base_config.get("loss_fn", DEFAULT_CONFIG["loss_fn"])
     aug_tag = "aug" if base_config.get("apply_minority_aug") else "noaug"
     run_name = f"{run_name_prefix}_{loss_tag}_{aug_tag}_{timestamp}"
@@ -183,8 +267,10 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
             (
                 train_dataset,
                 _,
+                _,
                 train_dataloader,
                 val_dataloader,
+                _,
                 split_save_path,
                 _,
             ) = build_splits_and_loaders(
@@ -214,7 +300,9 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
             if use_class_weights:
                 targets = [label for _, label in train_dataset]
                 class_counts = Counter(targets)
-                weights = 1.0 / np.array([class_counts[i] for i in range(int(cfg.num_classes))])
+                weights = 1.0 / np.array(
+                    [class_counts[i] for i in range(int(cfg.num_classes))]
+                )
                 weights = weights / weights.sum() * int(cfg.num_classes)
                 class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
 
@@ -224,7 +312,9 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
                 criterion = nn.CrossEntropyLoss(weight=class_weights)
 
             optimizer = optim.Adam(
-                model.parameters(), lr=float(cfg.learning_rate), weight_decay=float(cfg.weight_decay)
+                model.parameters(),
+                lr=float(cfg.learning_rate),
+                weight_decay=float(cfg.weight_decay),
             )
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer,
@@ -242,7 +332,8 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
             if bool(cfg.early_stop):
                 best_val_loss = float("inf")
                 early_stopper = EarlyStopper(
-                    patience=int(cfg.early_stop_patience), min_delta=float(cfg.early_stop_min_delta)
+                    patience=int(cfg.early_stop_patience),
+                    min_delta=float(cfg.early_stop_min_delta),
                 )
             else:
                 best_val_loss = None

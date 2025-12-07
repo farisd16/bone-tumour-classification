@@ -8,3 +8,4 @@ checkpoints
 wandb
 checkpoints_linear
 checkpoints_supcon
+runs

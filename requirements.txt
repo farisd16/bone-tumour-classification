@@ -10,3 +10,5 @@ wandb
 tensorboard
 seaborn
 scikit-learn
+torchmetrics
+lightning

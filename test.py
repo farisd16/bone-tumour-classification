@@ -50,12 +50,12 @@ transform = transforms.Compose(
     [
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 
 DATASET_DIR = os.path.join("data", "dataset")
-image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"  # Folder might have to be changed
+image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"
 json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 
 # Dataset
