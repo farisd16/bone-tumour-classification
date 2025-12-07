@@ -7,9 +7,9 @@ We use the **BTXRD dataset**, which contains X-ray images of different primary b
 
 ## **🎯 Project Goals**
 
-- Implement a **ResNet-based CNN** as a **baseline model** for tumor classification.  
-- Apply and analyze **class imbalance handling techniques** such as **Weighted Loss**, **Focal Loss**, and **Data Augmentation**.  
-- Use **generative models** (e.g., **GANs** or **Diffusion Models**) to create synthetic X-ray images and evaluate their impact on classification performance.  
+- Implement a **ResNet-based CNN** as a **baseline model** for tumor classification.
+- Apply and analyze **class imbalance handling techniques** such as **Weighted Loss**, **Focal Loss**, and **Data Augmentation**.
+- Use **generative models** (e.g., **GANs** or **Diffusion Models**) to create synthetic X-ray images and evaluate their impact on classification performance.
 
 ---
 
@@ -17,19 +17,19 @@ We use the **BTXRD dataset**, which contains X-ray images of different primary b
 
 We focus on classifying **seven tumor types**:
 
-- Osteochondroma  
-- Osteosarcoma  
-- Multiple Osteochondromas  
-- Simple Bone Cyst  
-- Giant Cell Tumor  
-- Synovial Osteochondroma  
-- Osteofibroma  
+- Osteochondroma
+- Osteosarcoma
+- Multiple Osteochondromas
+- Simple Bone Cyst
+- Giant Cell Tumor
+- Synovial Osteochondroma
+- Osteofibroma
 
 ---
 
 ## **🏫 About the Project**
 
-This project is part of the **Advanced Deep Learning Methods (ADLM)** course at the  
+This project is part of the **Applied Deep Learning in Medicine (ADLM)** course at the  
 **Technical University of Munich (TUM)**, in collaboration with the  
 **Clinic for Orthopaedics and Sports Orthopaedics** and the  
 **Institute for AI and Informatics in Medicine**.
@@ -69,7 +69,7 @@ pip install -r requirements.txt
 
 ## **▶️ How To Run (Preparation → Training → Testing)**
 
-1) Extract patches from annotations
+1. Extract patches from annotations
 
 ```
 python data/btxrd_bounding_box_dataset_extractor.py
@@ -77,44 +77,47 @@ python data/btxrd_bounding_box_dataset_extractor.py
 
 This creates `data/dataset/final_patched_BTXRD/` from `BTXRD/images` + `BTXRD/Annotations`.
 
-2) Train (with optional early stopping)
+2. Train (with optional early stopping)
 
 ```
 python src/training_ResNet.py --model resnet50 --early-stop --patience 10 --min-delta 0.001
 ```
 
 Notes:
+
 - The training pipeline reads labels directly from JSON annotations and splits in-memory.
 - By default it uses `data/dataset/patched_BTXRD_merged/` if present, otherwise falls back to `patched_BTXRD/`.
 - Checkpoints are written under `checkpoints/<model>/`.
 
-3) Test and generate confusion matrix
+3. Test and generate confusion matrix
 
 ```
 python src/testing_ResNet.py --model resnet50
 ```
 
 Outputs:
+
 - `checkpoints/<model>/test_predictions.npy`
 - `checkpoints/<model>/confusion_matrix.png`
 
-4) (Optional) Quick visualization of predictions
+4. (Optional) Quick visualization of predictions
 
 ```
 python src/plot_predictions.py
 ```
 
 ---
+
 ## **▶️ How to Run SupCon Loss **
 
-1) Contrastive Pretraining (run train_supcon.py)
+1. Contrastive Pretraining (run train_supcon.py)
 
-2) Linear Classifier Training (run train_linear.py)
+2. Linear Classifier Training (run train_linear.py)
 
-3) Evaluation (run eval_supcon.py)
-
+3. Evaluation (run eval_supcon.py)
 
 Outputs:
+
 - `checkpoints_supcon/<time>/encoder_supcon.pth`
 - `checkpoints_linear/<time>/classifier.pth`
 

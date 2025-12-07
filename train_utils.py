@@ -12,6 +12,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 from data.custom_dataset_class import CustomDataset
 
+
 class EarlyStopper:
     def __init__(self, patience=5, min_delta=0.0):
         self.patience = patience
@@ -32,7 +33,12 @@ class EarlyStopper:
 class FocalLoss(nn.Module):
     """Multi-class focal loss with optional per-class alpha weighting."""
 
-    def __init__(self, gamma: float = 2.0, alpha: Optional[torch.Tensor] = None, reduction: str = "mean"):
+    def __init__(
+        self,
+        gamma: float = 2.0,
+        alpha: Optional[torch.Tensor] = None,
+        reduction: str = "mean",
+    ):
         super().__init__()
         if reduction not in {"mean", "sum", "none"}:
             raise ValueError("reduction must be one of: 'mean', 'sum', 'none'")
@@ -46,7 +52,9 @@ class FocalLoss(nn.Module):
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         if inputs.ndim != 2:
-            raise ValueError("FocalLoss expects inputs of shape (batch_size, num_classes)")
+            raise ValueError(
+                "FocalLoss expects inputs of shape (batch_size, num_classes)"
+            )
         if targets.ndim != 1:
             targets = targets.view(-1)
 
@@ -70,6 +78,7 @@ class FocalLoss(nn.Module):
         if self.reduction == "sum":
             return loss.sum()
         return loss
+
 
 def make_transforms() -> Tuple[transforms.Compose, transforms.Compose]:
     """Return training and validation transforms matching current pipeline."""
@@ -100,9 +109,7 @@ def make_transforms() -> Tuple[transforms.Compose, transforms.Compose]:
         [
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-            ),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
     )
 
@@ -121,10 +128,12 @@ def make_minority_transform() -> transforms.Compose:
             transforms.RandomRotation(degrees=25),
             transforms.ColorJitter(
                 brightness=0.3,
-                contrast=0.3, 
-                ),
+                contrast=0.3,
+            ),
             transforms.RandomPerspective(distortion_scale=0.25, p=0.7),
-            transforms.RandomAffine(degrees=0, translate=(0.05, 0.05), scale=(0.95, 1.05)),
+            transforms.RandomAffine(
+                degrees=0, translate=(0.05, 0.05), scale=(0.95, 1.05)
+            ),
             transforms.GaussianBlur(kernel_size=3),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -140,15 +149,23 @@ def default_minority_classes() -> List[str]:
     ]
 
 
-def _stratified_indices(dataset_base: CustomDataset, test_size: float = 0.2, random_state: int = 42) -> Dict[str, np.ndarray]:
+def _stratified_indices(
+    dataset_base: CustomDataset, test_size: float = 0.2, random_state: int = 42
+) -> Dict[str, np.ndarray]:
     """Create stratified train/val/test indices (80/10/10 split)."""
-    targets = np.array([dataset_base.class_to_idx[label] for _, label in dataset_base.samples])
+    targets = np.array(
+        [dataset_base.class_to_idx[label] for _, label in dataset_base.samples]
+    )
     indices = np.arange(len(dataset_base))
 
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
+    sss = StratifiedShuffleSplit(
+        n_splits=1, test_size=test_size, random_state=random_state
+    )
     train_idx, temp_idx = next(sss.split(indices, targets))
 
-    sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=random_state)
+    sss_val = StratifiedShuffleSplit(
+        n_splits=1, test_size=0.5, random_state=random_state
+    )
     val_rel, test_rel = next(sss_val.split(temp_idx, np.array(targets)[temp_idx]))
     val_idx = temp_idx[val_rel]
     test_idx = temp_idx[test_rel]
@@ -169,10 +186,14 @@ def build_splits_and_loaders(
 ):
     """Create stratified splits, save to run_dir, and return datasets, dataloaders, and split metadata."""
     # Base dataset for splitting (no transform)
-    dataset_base = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=None)
+    dataset_base = CustomDataset(
+        image_dir=str(image_dir), json_dir=str(json_dir), transform=None
+    )
 
     # Indices
-    split_indices = _stratified_indices(dataset_base, test_size=test_size, random_state=random_state)
+    split_indices = _stratified_indices(
+        dataset_base, test_size=test_size, random_state=random_state
+    )
 
     # Save split
     split_save_path = os.path.join(run_dir, "data_split.json")
@@ -196,8 +217,12 @@ def build_splits_and_loaders(
             minority_classes=minority_classes,
         )
     else:
-        train_ds_full = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=train_t)
-    val_ds_full = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), transform=val_t)
+        train_ds_full = CustomDataset(
+            image_dir=str(image_dir), json_dir=str(json_dir), transform=train_t
+        )
+    val_ds_full = CustomDataset(
+        image_dir=str(image_dir), json_dir=str(json_dir), transform=val_t
+    )
 
     # Subsets
     train_dataset = Subset(train_ds_full, split_indices["train"])
@@ -207,33 +232,11 @@ def build_splits_and_loaders(
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-    return train_dataset, val_dataset, train_loader, val_loader, split_save_path, split_indices
-
-
-def parse_cli_args():
-    """Collect command-line options for training script."""
-    parser = argparse.ArgumentParser()
-    # ======================= Early stop loss ========================================
-    parser.add_argument("--early-stop", action="store_true",
-                        help="Enable early stopping on validation loss")
-    parser.add_argument("--early-stop-patience", type=int, default=5,
-                        help="Epochs without improvement before stopping")
-    parser.add_argument("--early-stop-min-delta", type=float, default=0.0,
-                        help="Minimum improvement in val loss to reset patience")
-    
-    # ====================== Minority Data Augmentation ==============================
-    parser.add_argument("--apply-minority-aug", action="store_true",
-                        help="Apply stronger augmentation only to minority classes")
-    
-    # ====================== Loss Function ==============================
-    parser.add_argument(
-        "--loss-fn",
-        # ce = CrossEntropy Loss | wce = WeightedCrossEntropy Loss | focal = Focal Loss | wfocal = WeightedFocal Loss
-        choices=["ce", "wce", "focal", "wfocal"], 
-        default="ce",
-        help="Loss to optimize: plain/weighted cross entropy or focal variants",
+    return (
+        train_dataset,
+        val_dataset,
+        train_loader,
+        val_loader,
+        split_save_path,
+        split_indices,
     )
-    parser.add_argument("--focal-gamma", type=float, default=2.0,
-                        help="Gamma focusing parameter when using focal loss")
-    
-    return parser.parse_args()
