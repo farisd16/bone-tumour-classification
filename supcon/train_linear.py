@@ -18,16 +18,14 @@ To train the classifier part
 """
 
 
-
 # Settings
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Ask for SupCon encoder path
 encoder_base_dir = "checkpoints_supcon"
 
-encoder_path = Path(encoder_base_dir) / "2025-11-22_09-16-14" / "encoder_supcon.pth"
-split_path   = Path(encoder_base_dir) / "2025-11-22_09-16-14" / "split.json"
+encoder_path = Path(encoder_base_dir) / "2025-12-07_15-01-11" / "encoder_supcon.pth"
+split_path   = Path(encoder_base_dir) / "2025-12-07_15-01-11" / "split.json"
 
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 save_dir = f"checkpoints_linear/{timestamp}"

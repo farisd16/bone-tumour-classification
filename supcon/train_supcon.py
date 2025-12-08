@@ -21,8 +21,9 @@ from sup_contrastive import (
 from sklearn.model_selection import StratifiedShuffleSplit
 
 
+
 """
-To train the encoder part
+First to train the encoder part
 """
 
 
@@ -45,7 +46,6 @@ base_dataset = CustomDataset(image_dir=str(image_dir), json_dir=str(json_dir), t
 
 
 # Stratified Split
-
 targets = [label for _, label in base_dataset.samples]
 targets = [base_dataset.class_to_idx[label] for label in targets]
 targets = torch.tensor(targets)
@@ -108,6 +108,7 @@ model = SupConModel(resnet, feature_dim=128).to(device)
 criterion = SupConLoss(temperature=0.1)
 optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=1e-5)
 
+
 # Training loop (only contrastive loss)
 num_epochs = 50
 
@@ -138,8 +139,9 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}: Contrastive Loss = {avg_loss:.4f}")
 
 
-
 # Save encoder
 encoder_path = os.path.join(save_dir, "encoder_supcon.pth")
 torch.save(model.encoder.state_dict(), encoder_path)
 print(f"Saved encoder to: {encoder_path}")
+
+
