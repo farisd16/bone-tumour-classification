@@ -1,0 +1,18 @@
+Testing SupCon:   0%|          | 0/11 [00:00<?, ?it/s]Testing SupCon:   9%|▉         | 1/11 [00:00<00:09,  1.02it/s]Testing SupCon:  18%|█▊        | 2/11 [00:02<00:11,  1.30s/it]Testing SupCon:  27%|██▋       | 3/11 [00:03<00:10,  1.28s/it]Testing SupCon:  36%|███▋      | 4/11 [00:05<00:09,  1.37s/it]Testing SupCon:  45%|████▌     | 5/11 [00:06<00:07,  1.19s/it]Testing SupCon:  55%|█████▍    | 6/11 [00:07<00:05,  1.14s/it]Testing SupCon:  64%|██████▎   | 7/11 [00:08<00:04,  1.09s/it]Testing SupCon:  73%|███████▎  | 8/11 [00:09<00:03,  1.12s/it]Testing SupCon:  82%|████████▏ | 9/11 [00:10<00:02,  1.18s/it]Testing SupCon:  91%|█████████ | 10/11 [00:11<00:01,  1.06s/it]Testing SupCon: 100%|██████████| 11/11 [00:12<00:00,  1.05s/it]Testing SupCon: 100%|██████████| 11/11 [00:12<00:00,  1.14s/it]
+Traceback (most recent call last):
+  File "/vol/miltank/users/cahu/bone-tumour-classification/eval_supcon.py", line 105, in <module>
+    wandb.init(
+  File "/meta/users/cahu/my_env/lib/python3.12/site-packages/wandb/sdk/wandb_init.py", line 1594, in init
+    get_sentry().reraise(e)
+  File "/meta/users/cahu/my_env/lib/python3.12/site-packages/wandb/analytics/sentry.py", line 190, in reraise
+    raise exc.with_traceback(tb)
+  File "/meta/users/cahu/my_env/lib/python3.12/site-packages/wandb/sdk/wandb_init.py", line 1515, in init
+    wi.maybe_login(init_settings)
+  File "/meta/users/cahu/my_env/lib/python3.12/site-packages/wandb/sdk/wandb_init.py", line 192, in maybe_login
+    wandb_login._login(
+  File "/meta/users/cahu/my_env/lib/python3.12/site-packages/wandb/sdk/wandb_login.py", line 365, in _login
+    key, key_status = wlogin.prompt_api_key(referrer=referrer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/meta/users/cahu/my_env/lib/python3.12/site-packages/wandb/sdk/wandb_login.py", line 272, in prompt_api_key
+    raise UsageError(message) from None
+wandb.errors.errors.UsageError: No API key configured. Use `wandb login` to log in.

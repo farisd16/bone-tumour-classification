@@ -4,7 +4,6 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 import json
 import torch
-import matplotlib.pyplot as plt
 import numpy as np
 
 

@@ -8,6 +8,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 from torchvision import models, transforms
 
+import wandb
+from config import WANDB_ENTITY, WANDB_PROJECT
+
 from data.custom_dataset_class import CustomDataset
 from sklearn.metrics import (
     f1_score,
@@ -25,12 +28,12 @@ from data.utils import display_confusion_matrix
 encoder_base_dir = "checkpoints_supcon"
 classifier_base_dir = "checkpoints_linear"
 
-encoder_path = Path(encoder_base_dir) / "2025-11-22_09-16-14" / "encoder_supcon.pth"
-classifier_path = Path(classifier_base_dir) / "2025-11-22_16-22-52" / "classifier.pth"
-split_path   = Path(encoder_base_dir) / "2025-11-22_09-16-14" / "split.json"
+encoder_path = Path(encoder_base_dir) / "2025-12-07_15-01-11" / "encoder_supcon.pth"
+classifier_path = Path(classifier_base_dir) / "2025-12-07_17-40-30" / "classifier.pth"
+
+split_path   = Path(encoder_base_dir) / "2025-12-07_15-01-11" / "split.json"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 # Load split
 with open(split_path, "r") as f:
@@ -98,10 +101,19 @@ f1_weighted = f1_score(all_labels, all_preds, average="weighted")
 accuracy = accuracy_score(all_labels, all_preds)
 balanced_accuracy = balanced_accuracy_score(all_labels, all_preds)
 
+# Init wandb
+wandb.init(
+    project=WANDB_PROJECT,
+    entity=WANDB_ENTITY,
+    name=f"supcon-eval-{encoder_path.parent.name}"
+)
 
-print("\n===== Metrics =====")
-print("Weighted Precision:", precision_weighted)
-print("Weighted Recall:", recall_weighted)
-print("Weighted F1:", f1_weighted)
-print("Accuracy:", accuracy)
-print("Balanced Accuracy:", balanced_accuracy)
+wandb.log({
+    "weighted_precision": precision_weighted,
+    "weighted_recall": recall_weighted,
+    "weighted_f1": f1_weighted,
+    "accuracy": accuracy,
+    "balanced_accuracy": balanced_accuracy
+})
+
+wandb.finish()

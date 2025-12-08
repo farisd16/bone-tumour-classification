@@ -1,0 +1,30 @@
+Testing SupCon:   0%|          | 0/11 [00:00<?, ?it/s]Testing SupCon:   9%|▉         | 1/11 [00:00<00:03,  2.87it/s]Testing SupCon:  18%|█▊        | 2/11 [00:00<00:02,  3.03it/s]Testing SupCon:  27%|██▋       | 3/11 [00:00<00:02,  3.57it/s]Testing SupCon:  36%|███▋      | 4/11 [00:01<00:01,  4.21it/s]Testing SupCon:  45%|████▌     | 5/11 [00:01<00:01,  4.84it/s]Testing SupCon:  55%|█████▍    | 6/11 [00:01<00:01,  4.69it/s]Testing SupCon:  64%|██████▎   | 7/11 [00:01<00:00,  5.60it/s]Testing SupCon:  73%|███████▎  | 8/11 [00:01<00:00,  5.63it/s]Testing SupCon:  82%|████████▏ | 9/11 [00:01<00:00,  4.82it/s]Testing SupCon:  91%|█████████ | 10/11 [00:02<00:00,  5.58it/s]Testing SupCon: 100%|██████████| 11/11 [00:02<00:00,  6.44it/s]Testing SupCon: 100%|██████████| 11/11 [00:02<00:00,  4.98it/s]
+wandb: Currently logged in as: canhbartu (faris-demirovic-tum-technical-university-of-munich) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run tf6kdj5t
+wandb: Tracking run with wandb version 0.23.1
+wandb: Run data is saved locally in /vol/miltank/users/cahu/bone-tumour-classification/wandb/run-20251207_175133-tf6kdj5t
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run supcon-eval-2025-12-07_15-01-11
+wandb: ⭐️ View project at https://wandb.ai/faris-demirovic-tum-technical-university-of-munich/bone-tumor-classification
+wandb: 🚀 View run at https://wandb.ai/faris-demirovic-tum-technical-university-of-munich/bone-tumor-classification/runs/tf6kdj5t
+wandb: updating run metadata; uploading summary
+wandb: uploading config.yaml
+wandb: 
+wandb: Run history:
+wandb:           accuracy ▁
+wandb:  balanced_accuracy ▁
+wandb:        weighted_f1 ▁
+wandb: weighted_precision ▁
+wandb:    weighted_recall ▁
+wandb: 
+wandb: Run summary:
+wandb:           accuracy 0.79825
+wandb:  balanced_accuracy 0.68871
+wandb:        weighted_f1 0.79462
+wandb: weighted_precision 0.79543
+wandb:    weighted_recall 0.79825
+wandb: 
+wandb: 🚀 View run supcon-eval-2025-12-07_15-01-11 at: https://wandb.ai/faris-demirovic-tum-technical-university-of-munich/bone-tumor-classification/runs/tf6kdj5t
+wandb: ⭐️ View project at: https://wandb.ai/faris-demirovic-tum-technical-university-of-munich/bone-tumor-classification
+wandb: Synced 4 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20251207_175133-tf6kdj5t/logs
