@@ -129,7 +129,7 @@ Outputs:
 python data/create_csv_patched.py
 ```
 
-## 🆕 Synthetic Generation (Latent Diffusion)
+## 🆕 1.Synthetic Generation (Latent Diffusion)
 
 ### Autoencoder
 
@@ -174,3 +174,6 @@ python -m latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run-name <
 - **`<VAE_RUN_DIR>` is the directory of the VAE train run, for example `train_vae_2025-12-07_17-36-29`**
 - **`<LDM_RUN_DIR>` is the directory of the diffusion train run, for example `train_ldm_2025-12-07_17-36-29`**
 - **`<CLASS_NAME>` is the name of the tumor subtype which you wish to sample for, for example `osteochondroma`**
+
+
+## 🆕 2.Synthetic Generation (Stylegan2)
