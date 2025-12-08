@@ -13,8 +13,9 @@ ml python/anaconda3
 # Activate corresponding environment
 # If you launch your script from a terminal where your environment is already loaded, conda won't activate the environment. The following guards against that.
 # Not necessary if you always run this script from a clean terminal
+eval "$(conda shell.bash hook)"
 conda deactivate
 # If the following does not work, try 'source activate <env-name>'
 conda activate bone-tumour-classification
 # Run the program
-python -m latent_diffusion.diffusion.train --run-name <RUN_NAME>
+srun python -m latent_diffusion.diffusion.train --run-name <RUN_NAME>
