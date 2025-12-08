@@ -177,3 +177,5 @@ python -m latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run-name <
 
 
 ## 🆕 2.Synthetic Generation (Stylegan2)
+
+Philipp
