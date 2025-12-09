@@ -14,9 +14,9 @@ METRIC_MODE = {
 }
 
 SEED = int(np.random.randint(2147483647))
-MAX_EPOCH = 200
+MAX_EPOCH = 100
 IMAGE_SIZE = 256
-BATCH_SIZE = 4
+BATCH_SIZE = 16
 NUM_CLASSES = 7
 TEST_SPLIT_RATIO = 0.1
 DATASET_DIR = os.path.join("data", "dataset")
