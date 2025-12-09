@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "/vol/miltank/users/cahu/bone-tumour-classification/train_linear.py", line 39, in <module>
-    with open(split_path, "r") as f:
-         ^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: 'checkpoints_supcon/2025-11-22_09-16-14/split.json'
