@@ -463,7 +463,7 @@ class LatentDiffusionWrapper(L.LightningModule):
         t = torch.randint(
             1,
             self.T,
-            (self.batch_size,),
+            (self.batch_size["train"],),
             device=self.device,
         ).long()
 
@@ -494,7 +494,7 @@ class LatentDiffusionWrapper(L.LightningModule):
         t = torch.randint(
             1,
             self.T,
-            (self.batch_size,),
+            (self.batch_size["val"],),
             device=self.device,
         ).long()
 

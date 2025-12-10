@@ -40,7 +40,6 @@ class BTXRDDataModule(L.LightningDataModule):
                 image_dir=str(IMAGE_DIR),
                 json_dir=str(JSON_DIR),
                 run_dir=self.run_dir,
-                batch_size=BATCH_SIZE,
                 test_size=TEST_SPLIT_RATIO,
                 transform=transform,
             )
@@ -56,7 +55,7 @@ class BTXRDDataModule(L.LightningDataModule):
     def train_dataloader(self):
         return data.DataLoader(
             self.train_dataset,
-            batch_size=BATCH_SIZE,
+            batch_size=BATCH_SIZE["train"],
             shuffle=True,
             num_workers=2,
         )
@@ -64,13 +63,13 @@ class BTXRDDataModule(L.LightningDataModule):
     def val_dataloader(self):
         return data.DataLoader(
             self.val_dataset,
-            batch_size=BATCH_SIZE,
+            batch_size=BATCH_SIZE["val"],
             num_workers=2,
         )
 
     def test_dataloader(self):
         return data.DataLoader(
             self.test_dataset,
-            batch_size=BATCH_SIZE,
+            batch_size=BATCH_SIZE["test"],
             num_workers=2,
         )

@@ -16,7 +16,11 @@ METRIC_MODE = {
 SEED = int(np.random.randint(2147483647))
 MAX_EPOCH = 100
 IMAGE_SIZE = 256
-BATCH_SIZE = 16
+BATCH_SIZE = {
+    "train": 16,
+    "val": 4,
+    "test": 4,
+}
 NUM_CLASSES = 7
 TEST_SPLIT_RATIO = 0.1
 DATASET_DIR = os.path.join("data", "dataset")

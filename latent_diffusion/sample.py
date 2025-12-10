@@ -6,6 +6,7 @@ from torchvision.transforms.functional import to_pil_image
 from latent_diffusion.vae.model import VAEWrapper
 from latent_diffusion.diffusion.model import LatentDiffusionWrapper
 from latent_diffusion.config import USE_EMA, CLASSIFIER_FREE_GUIDANCE_SCALE
+from latent_diffusion.utils import animate_result
 
 classes = [
     "osteochondroma",
@@ -65,6 +66,13 @@ progress, progress_decoded = model(
     inference=True,
     use_ema=USE_EMA,
     cfg_scale=CLASSIFIER_FREE_GUIDANCE_SCALE,
+)
+
+animate_result(
+    progress_decoded,
+    caption=f"LDM Sampling Progress for class: {class_name}",
+    run_name=ldm_run_name,
+    class_name=class_name,
 )
 
 # Save the final decoded sample as an image (CHW tensor -> PNG)
