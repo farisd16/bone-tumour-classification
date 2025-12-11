@@ -143,5 +143,3 @@ for epoch in range(num_epochs):
 encoder_path = os.path.join(save_dir, "encoder_supcon.pth")
 torch.save(model.encoder.state_dict(), encoder_path)
 print(f"Saved encoder to: {encoder_path}")
-
-
