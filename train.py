@@ -20,19 +20,19 @@ from train_utils import EarlyStopper, build_splits_and_loaders, FocalLoss
 
 DEFAULT_CONFIG: Dict[str, Any] = {
     "architecture": "ResNet34",
-    "learning_rate": 5e-5,
-    "weight_decay": 1e-5,
-    "batch_size": 16,
+    "learning_rate": 0.0002773728390451098,
+    "weight_decay": 0.00001,
+    "batch_size": 32,
     "epochs": 30,
-    "dropout": 0.5,
-    "loss_fn": "ce",
-    "focal_gamma": 2.0,
+    "dropout": 0.4007249403009643,
+    "loss_fn": "wfocal",
+    "focal_gamma": 2.924897740591147,
     "apply_minority_aug": False,
     "early_stop": False,
-    "early_stop_patience": 5,
+    "early_stop_patience": 10,
     "early_stop_min_delta": 0.0,
     "scheduler_factor": 0.5,
-    "scheduler_patience": 2,
+    "scheduler_patience": 4,
     "test_size": 0.2,
     "random_state": 42,
     "num_classes": 7,
@@ -119,6 +119,7 @@ def parse_cli_args() -> argparse.Namespace:
                         type=str, default=DEFAULT_CONFIG["run_name_prefix"],
                         help="Prefix for checkpoint/run folders")
     parser.add_argument("--num-classes", "--num_classes", dest="num_classes",
+                        type=int, default=DEFAULT_CONFIG["num_classes"],
                         help="Number of output classes")
     parser.add_argument("--architecture", type=str, default=DEFAULT_CONFIG["architecture"],
                         help="Backbone architecture to finetune (currently only ResNet34)")
