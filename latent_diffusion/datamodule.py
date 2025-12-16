@@ -10,6 +10,7 @@ from latent_diffusion.config import (
     BATCH_SIZE,
     TEST_SPLIT_RATIO,
     IMAGE_SIZE,
+    XLSX_PATH,
 )
 
 transform = Compose(
@@ -24,9 +25,8 @@ transform = Compose(
 class BTXRDDataModule(L.LightningDataModule):
     def __init__(self, run_dir):
         super().__init__()
-        self.split = ["train", "test", "val"]
+        self.split = ["train", "test"]
         self.train_dataset = None
-        self.val_dataset = None
         self.test_dataset = None
         self.run_dir = run_dir
         self.dataset = CustomDataset
@@ -35,21 +35,21 @@ class BTXRDDataModule(L.LightningDataModule):
         pass
 
     def setup(self, stage=None):
-        train_dataset, val_dataset, test_dataset, _, _, _, _, _ = (
-            build_splits_and_loaders(
-                image_dir=str(IMAGE_DIR),
-                json_dir=str(JSON_DIR),
-                run_dir=self.run_dir,
-                test_size=TEST_SPLIT_RATIO,
-                transform=transform,
-            )
+        train_dataset, _, test_dataset, _, _, _, _, _ = build_splits_and_loaders(
+            image_dir=str(IMAGE_DIR),
+            json_dir=str(JSON_DIR),
+            run_dir=self.run_dir,
+            test_size=TEST_SPLIT_RATIO,
+            transform=transform,
+            xlsx_path=str(XLSX_PATH),
+            exclude_val=True,
         )
 
         if stage == "fit" or stage is None:
             self.train_dataset = train_dataset
-            self.val_dataset = val_dataset
+            self.test_dataset = test_dataset
 
-        if stage == "test" or stage is None:
+        if stage == "test":
             self.test_dataset = test_dataset
 
     def train_dataloader(self):
@@ -62,8 +62,8 @@ class BTXRDDataModule(L.LightningDataModule):
 
     def val_dataloader(self):
         return data.DataLoader(
-            self.val_dataset,
-            batch_size=BATCH_SIZE["val"],
+            self.test_dataset,
+            batch_size=BATCH_SIZE["test"],
             num_workers=2,
         )
 

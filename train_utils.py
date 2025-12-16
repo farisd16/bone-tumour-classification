@@ -150,7 +150,10 @@ def default_minority_classes() -> List[str]:
 
 
 def _stratified_indices(
-    dataset_base: CustomDataset, test_size: float = 0.2, random_state: int = 42
+    dataset_base: CustomDataset,
+    test_size: float = 0.2,
+    random_state: int = 42,
+    exclude_val: bool = False,
 ) -> Dict[str, np.ndarray]:
     """Create stratified train/val/test indices (80/10/10 split)."""
     targets = np.array(
@@ -162,6 +165,9 @@ def _stratified_indices(
         n_splits=1, test_size=test_size, random_state=random_state
     )
     train_idx, temp_idx = next(sss.split(indices, targets))
+
+    if exclude_val:
+        return {"train": train_idx, "val": np.array([], dtype=int), "test": temp_idx}
 
     sss_val = StratifiedShuffleSplit(
         n_splits=1, test_size=0.5, random_state=random_state
@@ -184,16 +190,25 @@ def build_splits_and_loaders(
     minority_classes: Optional[List[str]] = None,
     minority_transform: Optional[transforms.Compose] = None,
     transform: Optional[transforms.Compose] = None,
+    exclude_val: bool = False,
+    xlsx_path: Optional[str] = None,
 ):
     """Create stratified splits, save to run_dir, and return datasets, dataloaders, and split metadata."""
     # Base dataset for splitting (no transform)
     dataset_base = CustomDataset(
-        image_dir=str(image_dir), json_dir=str(json_dir), transform=None
+        image_dir=str(image_dir),
+        json_dir=str(json_dir),
+        transform=None,
+        xlsx_path=xlsx_path,
+        use_anatomical_location=xlsx_path is not None,
     )
 
     # Indices
     split_indices = _stratified_indices(
-        dataset_base, test_size=test_size, random_state=random_state
+        dataset_base,
+        test_size=test_size,
+        random_state=random_state,
+        exclude_val=exclude_val,
     )
 
     # Save split
