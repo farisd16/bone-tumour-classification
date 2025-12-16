@@ -14,14 +14,14 @@ METRIC_MODE = {
 }
 
 SEED = int(np.random.randint(2147483647))
-MAX_EPOCH = 100
+MAX_EPOCH = 800
 IMAGE_SIZE = 256
 BATCH_SIZE = {
-    "train": 22,
+    "train": 16,
     "val": 4,
     "test": 4,
 }
-NUM_CLASSES = 7
+NUM_CLASSES = 21
 TEST_SPLIT_RATIO = 0.1
 DATASET_DIR = os.path.join("data", "dataset")
 IMAGE_DIR = Path(DATASET_DIR) / "final_patched_BTXRD"

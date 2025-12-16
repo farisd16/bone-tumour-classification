@@ -8,7 +8,7 @@ from latent_diffusion.diffusion.model import LatentDiffusionWrapper
 from latent_diffusion.config import USE_EMA, CLASSIFIER_FREE_GUIDANCE_SCALE
 from latent_diffusion.utils import animate_result
 
-classes = [
+_tumor_classes = [
     "osteochondroma",
     "osteosarcoma",
     "multiple osteochondromas",
@@ -17,7 +17,36 @@ classes = [
     "synovial osteochondroma",
     "osteofibroma",
 ]
+
+# _anatomical_locations = [
+#     "hand",
+#     "ulna",
+#     "radius",
+#     "humerus",
+#     "foot",
+#     "tibia",
+#     "fibula",
+#     "femur",
+#     "hip bone",
+#     "ankle-joint",
+#     "knee-joint",
+#     "hip-joint",
+#     "wrist-joint",
+#     "elbow-joint",
+#     "shoulder-joint",
+# ]
+
+_anatomical_locations = [
+    "upper limb",
+    "lower limb",
+    "pelvis",
+]
+
+classes = [
+    f"{loc} {tumor}" for loc in _anatomical_locations for tumor in _tumor_classes
+]
 class_to_idx = {cls_name: idx for idx, cls_name in enumerate(classes)}
+
 
 parser = argparse.ArgumentParser(description="Test autoencoder")
 parser.add_argument(
@@ -59,6 +88,9 @@ model = LatentDiffusionWrapper.load_from_checkpoint(
 )
 
 context = None if class_name == "None" else class_to_idx[class_name]
+
+print(f"Sampling for class: {class_name} (context: {context})")
+
 USE_EMA = True if USE_EMA == "True" else False
 
 progress, progress_decoded = model(
