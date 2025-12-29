@@ -5,6 +5,8 @@ from new_latent_diffusion.config import NUM_LATENT_CHANNELS
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+# TODO: Try out VQVAE
+
 vae = AutoencoderKL(
     in_channels=1,
     out_channels=1,
