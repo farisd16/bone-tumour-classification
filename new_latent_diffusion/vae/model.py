@@ -12,13 +12,15 @@ vae = AutoencoderKL(
     out_channels=1,
     latent_channels=NUM_LATENT_CHANNELS,
     sample_size=256,
-    block_out_channels=(64, 128, 256),
+    block_out_channels=(64, 128, 256, 512),
     down_block_types=(
+        "DownEncoderBlock2D",
         "DownEncoderBlock2D",
         "DownEncoderBlock2D",
         "DownEncoderBlock2D",
     ),
     up_block_types=(
+        "UpDecoderBlock2D",
         "UpDecoderBlock2D",
         "UpDecoderBlock2D",
         "UpDecoderBlock2D",

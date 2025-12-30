@@ -4,7 +4,6 @@ import datetime
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 import numpy as np
 import wandb
 from tqdm import tqdm
@@ -158,7 +157,7 @@ def train():
             # -----------------------
             # Checkpointing
             # -----------------------
-            if (epoch + 1) % 50 == 0:
+            if (epoch + 1) % 25 == 0:
                 checkpoint_path = f"{run_dir}/model/vae_epoch_{epoch + 1}.pth"
                 torch.save(vae.state_dict(), checkpoint_path)
                 artifact = wandb.Artifact(
