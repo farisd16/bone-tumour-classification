@@ -12,9 +12,8 @@ vae = AutoencoderKL(
     out_channels=1,
     latent_channels=NUM_LATENT_CHANNELS,
     sample_size=256,
-    block_out_channels=(64, 128, 256, 512),
+    block_out_channels=(64, 128, 256),
     down_block_types=(
-        "DownEncoderBlock2D",
         "DownEncoderBlock2D",
         "DownEncoderBlock2D",
         "DownEncoderBlock2D",
@@ -23,7 +22,6 @@ vae = AutoencoderKL(
         "UpDecoderBlock2D",
         "UpDecoderBlock2D",
         "UpDecoderBlock2D",
-        "UpDecoderBlock2D",
     ),
     norm_num_groups=32,
-).to(device)
+)

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import wandb
 from tqdm import tqdm
+import lpips
 
 from config import WANDB_ENTITY, WANDB_PROJECT
 from train_utils import build_splits_and_loaders
@@ -20,6 +21,9 @@ from new_latent_diffusion.config import (
     JSON_DIR,
     TEST_SPLIT_RATIO,
     XLSX_PATH,
+    VAE_KL_BETA_MAX,
+    VAE_LPIPS_WEIGHT,
+    VAE_KL_WARMUP_EPOCHS,
 )
 from new_latent_diffusion.vae.model import vae
 
@@ -36,11 +40,16 @@ def train():
             transforms.Grayscale(num_output_channels=1),
             transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
             transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,)),
+            transforms.Normalize((0.5,), (0.5,)),  # [-1, 1]
         ]
     )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    vae.to(device)
+    vae.train()
+
+    lpips_loss = lpips.LPIPS(net="alex").to(device)
+    lpips_loss.eval()
 
     _, _, _, train_loader, _, test_loader, _, _ = build_splits_and_loaders(
         image_dir=str(VAE_IMAGE_DIR),
@@ -61,71 +70,94 @@ def train():
             "epochs": VAE_EPOCHS,
             "batch_size": BATCH_SIZE,
             "image_size": IMAGE_SIZE,
+            "kl_beta_max": VAE_KL_BETA_MAX,
+            "kl_warmup_epochs": VAE_KL_WARMUP_EPOCHS,
+            "lpips_weight": VAE_LPIPS_WEIGHT,
+            "latent_channels": vae.config.latent_channels,
+            "block_out_channels": vae.config.block_out_channels,
         },
         name=run_name,
     ) as run:
-        train_losses = []
-        test_losses = []
-
         vae_optimizer = torch.optim.AdamW(vae.parameters(), lr=VAE_LR)
+
         for epoch in range(VAE_EPOCHS):
+            vae.train()
             epoch_losses = []
-            for step, (images, _) in enumerate(
-                tqdm(train_loader, desc=f"Epoch {epoch + 1}/{VAE_EPOCHS} [Train]")
+
+            # KL warm-up
+            beta = min(
+                VAE_KL_BETA_MAX,
+                (epoch + 1) / VAE_KL_WARMUP_EPOCHS * VAE_KL_BETA_MAX,
+            )
+
+            for images, _ in tqdm(
+                train_loader, desc=f"Epoch {epoch + 1}/{VAE_EPOCHS} [Train]"
             ):
                 images = images.to(device)
                 vae_optimizer.zero_grad()
 
-                # VAE forward pass
+                # Encode
                 posterior = vae.encode(images)
-                outputs = vae.decode(posterior["latent_dist"].sample())
-                # Compute VAE loss
-                recon_loss = F.mse_loss(outputs.sample, images, reduction="mean")
-                kl_loss = (
-                    posterior.latent_dist.kl() / (BATCH_SIZE * IMAGE_SIZE * IMAGE_SIZE)
-                ).mean()
-                vae_loss = recon_loss + 0.5 * kl_loss
+                latents = posterior.latent_dist.mean
 
-                epoch_losses.append(vae_loss.item())
+                # Decode
+                recon = vae.decode(latents).sample
+
+                # Losses
+                l1_loss = F.l1_loss(recon, images)
+                perceptual = lpips_loss(recon, images).mean()
+                kl_loss = posterior.latent_dist.kl().mean()
+
+                vae_loss = l1_loss + VAE_LPIPS_WEIGHT * perceptual + beta * kl_loss
+
                 vae_loss.backward()
                 vae_optimizer.step()
 
-            avg_train_loss = np.mean(epoch_losses)
-            train_losses.append(avg_train_loss)
+                epoch_losses.append(vae_loss.item())
+
+            avg_train_loss = float(np.mean(epoch_losses))
+
+            # -----------------------
+            # Validation
+            # -----------------------
+            vae.eval()
+            test_losses = []
 
             with torch.no_grad():
-                test_epoch_losses = []
-                for step, (images, _) in enumerate(
-                    tqdm(test_loader, desc=f"Epoch {epoch + 1}/{VAE_EPOCHS} [Test]")
+                for images, _ in tqdm(
+                    test_loader, desc=f"Epoch {epoch + 1}/{VAE_EPOCHS} [Test]"
                 ):
                     images = images.to(device)
 
-                    # VAE forward pass
                     posterior = vae.encode(images)
-                    outputs = vae.decode(posterior["latent_dist"].sample())
-                    # Compute VAE loss
-                    recon_loss = F.mse_loss(outputs.sample, images, reduction="mean")
-                    kl_loss = (
-                        posterior.latent_dist.kl()
-                        / (BATCH_SIZE * IMAGE_SIZE * IMAGE_SIZE)
-                    ).mean()
-                    vae_loss = recon_loss + 0.5 * kl_loss
+                    latents = posterior.latent_dist.mean
+                    recon = vae.decode(latents).sample
 
-                    test_epoch_losses.append(vae_loss.item())
+                    l1_loss = F.l1_loss(recon, images)
+                    perceptual = lpips_loss(recon, images).mean()
+                    kl_loss = posterior.latent_dist.kl().mean()
 
-            avg_test_loss = np.mean(test_epoch_losses)
-            test_losses.append(avg_test_loss)
+                    vae_loss = l1_loss + VAE_LPIPS_WEIGHT * perceptual + beta * kl_loss
 
-            # Log to wandb
+                    test_losses.append(vae_loss.item())
+
+            avg_test_loss = float(np.mean(test_losses))
+
             run.log(
                 {
-                    "epoch": epoch + 1,
-                    "train_loss": avg_train_loss,
-                    "test_loss": avg_test_loss,
+                    "VAE Loss/Train": avg_train_loss,
+                    "VAE Loss/Test": avg_test_loss,
+                    "VAE KL Beta": beta,
+                    "VAE L1 Loss": l1_loss.item(),
+                    "VAE Perceptual Loss": perceptual.item(),
+                    "VAE KL Loss": kl_loss.item(),
+                    "VAE Epoch": epoch + 1,
                 }
             )
 
-            # Save model weights every 50 epochs
+            # -----------------------
+            # Checkpointing
+            # -----------------------
             if (epoch + 1) % 50 == 0:
                 checkpoint_path = f"{run_dir}/model/vae_epoch_{epoch + 1}.pth"
                 torch.save(vae.state_dict(), checkpoint_path)
@@ -136,28 +168,12 @@ def train():
                 artifact.add_file(checkpoint_path)
                 run.log_artifact(artifact)
 
-        # Save final model
+        # Final model
         final_model_path = f"{run_dir}/model/vae_final.pth"
         torch.save(vae.state_dict(), final_model_path)
         final_artifact = wandb.Artifact(name="vae_final", type="model")
         final_artifact.add_file(final_model_path)
         run.log_artifact(final_artifact)
-
-        # Save loss plot
-        plt.figure(figsize=(10, 6))
-        plt.plot(range(1, VAE_EPOCHS + 1), train_losses, label="Train Loss")
-        plt.plot(range(1, VAE_EPOCHS + 1), test_losses, label="Test Loss")
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.title("VAE Training and Test Loss")
-        plt.legend()
-        plt.grid(True)
-        loss_plot_path = f"{run_dir}/loss_plot.png"
-        plt.savefig(loss_plot_path)
-        plt.close()
-
-        # Log loss plot to wandb
-        run.log({"loss_plot": wandb.Image(loss_plot_path)})
 
 
 if __name__ == "__main__":

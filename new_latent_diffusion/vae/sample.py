@@ -14,6 +14,7 @@ from new_latent_diffusion.config import (
     VAE_IMAGE_DIR,
     XLSX_PATH,
     IMAGE_SIZE,
+    NUM_LATENT_CHANNELS,
 )
 from train_utils import build_splits_and_loaders
 from new_latent_diffusion.vae.model import vae
@@ -48,6 +49,8 @@ def sample():
     vae_model_path = f"new_latent_diffusion/vae/runs/{run_name}/model/vae_final.pth"
     if os.path.exists(vae_model_path):
         vae.load_state_dict(torch.load(vae_model_path))
+        vae.to(device)
+        vae.eval()
     else:
         print(f"VAE model not found at {vae_model_path}")
         return
@@ -71,7 +74,12 @@ def sample():
     scale_factor = 8
 
     noise = torch.randn_like(
-        torch.randn(1, 3, IMAGE_SIZE // scale_factor, IMAGE_SIZE // scale_factor)
+        torch.randn(
+            1,
+            NUM_LATENT_CHANNELS,
+            IMAGE_SIZE // scale_factor,
+            IMAGE_SIZE // scale_factor,
+        )
     ).to(device)
     torch.nn.init.uniform_(noise, -1.0, 1.0)
     print("Noise Range:", noise.min().cpu().numpy(), "to", noise.max().cpu().numpy())
@@ -87,12 +95,12 @@ def sample():
         # Reconstruct the image using the loaded model
         with torch.no_grad():
             print(f"\nNoise Level: {round(scale * 100.0, 2)}%")
-            z = vae.encode(image, inference=True)
+            z = vae.encode(image).latent_dist.sample()
             z = (1.0 - scale) * z + scale * noise
             z_min = round(float(z.min().cpu().numpy()), 3)
             z_max = round(float(z.max().cpu().numpy()), 3)
             print(f"Latent Image Range: {z_min} to {z_max}")
-            x = vae.decode(z)
+            x = vae.decode(z).sample
 
         # Process the output image
         z = F.interpolate(z, scale_factor=4, mode="nearest")
