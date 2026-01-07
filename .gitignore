@@ -10,3 +10,7 @@ checkpoints_linear
 checkpoints_supcon
 runs
 logs
+
+sd_finetuned/lora_weights
+sd_finetuned/generated_images/
+sd_finetuned/*.png
