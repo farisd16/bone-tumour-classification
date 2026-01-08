@@ -124,7 +124,7 @@ for epoch in range(num_epochs):
         # reshape: [B*2, C, H, W]
         images = images.view(-1, *images.shape[2:])
 
-        features = model(images)  # → [B*2, 128]
+        features = model(images)  # ƒÅ' [B*2, 128]
         features = features.view(B, 2, -1)
 
         loss = criterion(features, labels)
@@ -143,5 +143,4 @@ for epoch in range(num_epochs):
 encoder_path = os.path.join(save_dir, "encoder_supcon.pth")
 torch.save(model.encoder.state_dict(), encoder_path)
 print(f"Saved encoder to: {encoder_path}")
-
 

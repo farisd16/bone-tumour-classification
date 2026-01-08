@@ -18,7 +18,7 @@ from sklearn.metrics import (
 )
 import wandb
 
-from utils import display_confusion_matrix
+#from utils import display_confusion_matrix
 from config import WANDB_ENTITY, WANDB_PROJECT
 
 """
@@ -137,7 +137,7 @@ test_acc = 100 * correct / total
 
 print(f"\nTest Loss: {avg_test_loss:.4f} | Test Accuracy: {test_acc:.2f}%")
 
-display_confusion_matrix(all_labels, all_preds)
+# display_confusion_matrix(all_labels, all_preds)
 
 precision_weighted = precision_score(all_labels, all_preds, average="weighted")
 recall_weighted = recall_score(all_labels, all_preds, average="weighted")

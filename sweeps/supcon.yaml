@@ -1,0 +1,52 @@
+project: bone-tumor-classification
+entity: faris-demirovic-tum-technical-university-of-munich
+program: supcon/supcon_pipeline.py
+method: bayes
+metric:
+  name: val_acc
+  goal: maximize
+parameters:
+  run_name_prefix:
+    value: supcon
+  temperature:
+    distribution: uniform
+    min: 0.05
+    max: 0.2
+  feature_dim:
+    values: [64, 128, 256]
+  supcon_lr:
+    distribution: log_uniform_values
+    min: 3.0e-5
+    max: 3.0e-3
+  supcon_weight_decay:
+    values: [0.0, 1.0e-6, 1.0e-5]
+  supcon_batch_size:
+    values: [32, 64]
+  supcon_epochs:
+    value: 50
+  linear_lr:
+    distribution: log_uniform_values
+    min: 1.0e-4
+    max: 3.0e-3
+  linear_weight_decay:
+    values: [0.0, 1.0e-6, 1.0e-5]
+  linear_batch_size:
+    values: [32, 64]
+  linear_epochs:
+    values: [10, 20, 30]
+  color_jitter:
+    distribution: uniform
+    min: 0.0
+    max: 0.4
+  random_rotation:
+    values: [0, 10, 15, 25]
+  apply_minority_aug:
+    values: [true, false]
+  test_size:
+    value: 0.2
+  val_size:
+    value: 0.1
+  random_state:
+    value: 42
+  num_classes:
+    value: 7
