@@ -1,5 +1,3 @@
-# This script is in diffusers/examples/text_to_image on the server
-
 #!/bin/bash
 #SBATCH --job-name=finetune-sd-1-5
 #SBATCH --output=./finetune-sd-1-5-%A.out
