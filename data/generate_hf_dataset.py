@@ -218,16 +218,16 @@ with tempfile.TemporaryDirectory() as temp_run_dir:
         # Generate metadata
         train_metadata.append(generate_metadata_entry(img_path))
 
+    # Process test split
+    test_metadata = []
     for idx in split_indices["val"]:
         img_path, label = base_dataset.samples[idx]
         image_file = os.path.basename(img_path)
-        # Copy image to train directory
-        shutil.copy2(img_path, os.path.join(train_dir, image_file))
+        # Copy image to test directory
+        shutil.copy2(img_path, os.path.join(test_dir, image_file))
         # Generate metadata
-        train_metadata.append(generate_metadata_entry(img_path))
+        test_metadata.append(generate_metadata_entry(img_path))
 
-    # Process test split
-    test_metadata = []
     for idx in split_indices["test"]:
         img_path, label = base_dataset.samples[idx]
         image_file = os.path.basename(img_path)
@@ -252,9 +252,8 @@ split_info_path = os.path.join(output_dir, "split_info.json")
 with open(split_info_path, "w") as f:
     json.dump(
         {
-            "train_indices": split_indices["train"].tolist()
-            + split_indices["val"].tolist(),
-            "test_indices": split_indices["test"].tolist(),
+            "train": split_indices["train"].tolist(),
+            "test": split_indices["val"].tolist() + split_indices["test"].tolist(),
             "test_size": args.test_size,
             "random_state": args.random_state,
         },

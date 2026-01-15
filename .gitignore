@@ -12,6 +12,6 @@ runs
 logs
 generated_images/
 
-sd_finetuned/lora_weights
-sd_finetuned/generated_images/
-sd_finetuned/*.png
+latent_diffusion_finetuned/lora_weights
+latent_diffusion_finetuned/generated_images/
+latent_diffusion_finetuned/*.png
