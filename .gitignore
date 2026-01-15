@@ -14,3 +14,9 @@ logs
 latent_diffusion_finetuned/lora_weights
 latent_diffusion_finetuned/generated_images/
 latent_diffusion_finetuned/*.png
+
+*.err
+*.out
+
+latent_diffusion_finetuned/fid_evaluation_samples/
+latent_diffusion_finetuned/real_samples/
