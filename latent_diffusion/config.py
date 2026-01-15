@@ -23,7 +23,7 @@ BATCH_SIZE = {
 }
 NUM_CLASSES = 21
 TEST_SPLIT_RATIO = 0.1
-DATASET_DIR = os.path.join("data", "dataset")
+DATASET_DIR = os.path.join("/","vol", "miltank", "projects", "practical_wise2526", "bone-tumor-classification-gen-models", "bone-tumour-classification", "data", "dataset")
 IMAGE_DIR = Path(DATASET_DIR) / "final_patched_BTXRD"
 JSON_DIR = Path(DATASET_DIR) / "BTXRD" / "Annotations"
 XLSX_PATH = Path(DATASET_DIR) / "BTXRD" / "dataset.xlsx"
@@ -35,5 +35,5 @@ BETA_END = 2e-2
 SCALE_DOWN = 5
 USE_EMA = "True"
 CLASSIFIER_FREE_GUIDANCE_SCALE = (
-    1.069  # @param {type:"slider", min:0, max:3, step:0.001}
-)
+    4  # @param {type:"slider", min:0, max:3, step:0.001}
+) #original: 1.069

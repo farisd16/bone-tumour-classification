@@ -59,6 +59,9 @@ def _train_loop():
         logger=False,
         callbacks=callbacks,
         log_every_n_steps=5,
+        # Add more Trainer arguments
+        # precision="16-mixed",           # recommended for diffusion
+        # deterministic=True,             # fixes nondeterminism
     )
     trainer.fit(
         diffusion_model,
