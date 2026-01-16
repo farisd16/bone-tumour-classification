@@ -179,6 +179,23 @@ def _stratified_indices(
     return {"train": train_idx, "val": val_idx, "test": test_idx}
 
 
+def _load_split_indices(split_json_path: str) -> Dict[str, np.ndarray]:
+    with open(split_json_path, "r") as f:
+        data = json.load(f)
+    if not isinstance(data, dict):
+        raise ValueError("Split JSON must be an object with train/val/test keys.")
+    missing = [k for k in ("train", "val", "test") if k not in data]
+    if missing:
+        raise KeyError(f"Split JSON missing keys: {', '.join(missing)}")
+    split_indices = {}
+    for key in ("train", "val", "test"):
+        values = data[key]
+        if not isinstance(values, list):
+            raise ValueError(f"Split key '{key}' must be a list.")
+        split_indices[key] = np.array(values, dtype=int)
+    return split_indices
+
+
 def build_splits_and_loaders(
     image_dir: str,
     json_dir: str,
@@ -192,6 +209,7 @@ def build_splits_and_loaders(
     transform: Optional[transforms.Compose] = None,
     exclude_val: bool = False,
     xlsx_path: Optional[str] = None,
+    split_json_path: Optional[str] = None,
 ):
     """Create stratified splits, save to run_dir, and return datasets, dataloaders, and split metadata."""
     # Base dataset for splitting (no transform)
@@ -204,12 +222,15 @@ def build_splits_and_loaders(
     )
 
     # Indices
-    split_indices = _stratified_indices(
-        dataset_base,
-        test_size=test_size,
-        random_state=random_state,
-        exclude_val=exclude_val,
-    )
+    if split_json_path:
+        split_indices = _load_split_indices(split_json_path)
+    else:
+        split_indices = _stratified_indices(
+            dataset_base,
+            test_size=test_size,
+            random_state=random_state,
+            exclude_val=exclude_val,
+        )
 
     # Save split
     split_save_path = os.path.join(run_dir, "data_split.json")
