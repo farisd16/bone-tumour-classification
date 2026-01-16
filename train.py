@@ -128,13 +128,6 @@ def parse_cli_args() -> argparse.Namespace:
         default=DEFAULT_CONFIG["random_state"],
         help="Random seed for data splits",
     )
-    parser.add_argument(
-        "--trainwsyn",
-        dest="trainwsyn",
-        type=str,
-        default=DEFAULT_CONFIG["trainwsyn"],
-        help="Path to a precomputed split JSON to use instead of creating one",
-    )
 
     # Loss configuration
     parser.add_argument(
@@ -213,7 +206,13 @@ def parse_cli_args() -> argparse.Namespace:
         default=DEFAULT_CONFIG["architecture"],
         help="Backbone architecture to finetune (currently only ResNet34)",
     )
-
+    parser.add_argument(
+        "--trainwsyn",
+        dest="trainwsyn",
+        type=str,
+        default=DEFAULT_CONFIG["trainwsyn"],
+        help="Path to a precomputed split JSON to use instead of creating one",
+    )
     return parser.parse_args()
 
 
