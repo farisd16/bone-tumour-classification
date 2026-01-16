@@ -24,9 +24,9 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "batch_size": 32,
     "epochs": 30,
     "dropout": 0.4007249403009643,
-    "loss_fn": "wfocal",
+    "loss_fn": "wce",
     "focal_gamma": 2.924897740591147,
-    "apply_minority_aug": False,
+    "apply_minority_aug": True,
     "early_stop": False,
     "early_stop_patience": 10,
     "early_stop_min_delta": 0.0,
@@ -35,7 +35,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "test_size": 0.2,
     "random_state": 42,
     "num_classes": 7,
-    "run_name_prefix": "resnet",
+    "run_name_prefix": "resnet_synthetic",
+    "trainwsyn": None,
 }
 
 
@@ -205,7 +206,13 @@ def parse_cli_args() -> argparse.Namespace:
         default=DEFAULT_CONFIG["architecture"],
         help="Backbone architecture to finetune (currently only ResNet34)",
     )
-
+    parser.add_argument(
+        "--trainwsyn",
+        dest="trainwsyn",
+        type=str,
+        default=DEFAULT_CONFIG["trainwsyn"],
+        help="Path to a precomputed split JSON to use instead of creating one",
+    )
     return parser.parse_args()
 
 
@@ -230,6 +237,7 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
         "num_classes": args.num_classes,
         "run_name_prefix": args.run_name_prefix,
         "architecture": args.architecture,
+        "trainwsyn": args.trainwsyn,
     }
 
 
@@ -244,7 +252,13 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
     )
     loss_tag = base_config.get("loss_fn", DEFAULT_CONFIG["loss_fn"])
     aug_tag = "aug" if base_config.get("apply_minority_aug") else "noaug"
-    run_name = f"{run_name_prefix}_{loss_tag}_{aug_tag}_{timestamp}"
+    split_tag = ""
+    if base_config.get("trainwsyn"):
+        split_tag = Path(str(base_config["trainwsyn"])).stem
+    if split_tag:
+        run_name = f"{run_name_prefix}_{split_tag}_{loss_tag}_{aug_tag}_{timestamp}"
+    else:
+        run_name = f"{run_name_prefix}_{loss_tag}_{aug_tag}_{timestamp}"
 
     checkpoints_base_dir = "checkpoints"
     os.makedirs(checkpoints_base_dir, exist_ok=True)
@@ -283,6 +297,7 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
                 test_size=float(cfg.test_size),
                 random_state=int(cfg.random_state),
                 apply_minority_aug=bool(cfg.apply_minority_aug),
+                split_json_path=str(cfg.trainwsyn) if cfg.trainwsyn else None,
             )
 
             architecture = cfg.architecture

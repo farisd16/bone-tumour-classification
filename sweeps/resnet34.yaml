@@ -21,7 +21,7 @@ parameters:
   epochs:
     value: 30
   dropout:
-    -: uniform
+    distribution: uniform
     min: 0.2
     max: 0.6
   loss_fn:
@@ -48,3 +48,6 @@ parameters:
     value: 42
   num_classes:
     value: 7
+  trainwsyn:
+    value: data/dataset/splits/split_step6.json
+
