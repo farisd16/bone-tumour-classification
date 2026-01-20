@@ -1,4 +1,5 @@
 import os
+import argparse
 from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler
 from PIL import Image, ImageDraw, ImageFont
 from itertools import product
@@ -34,20 +35,36 @@ ANATOMICAL_LOCATIONS = [
 
 VIEWS = ["frontal", "lateral", "oblique"]
 
-# LORA_SCALES = [0.6, 0.7, 0.8, 0.9, 1]
-LORA_SCALES = [1]
+LORA_SCALES = [0.7, 0.8, 0.9, 1]
 
-# model_base = "sd-legacy/stable-diffusion-v1-5"
-model_base = "stanfordmimi/RoentGen-v2"
+MODEL_BASE_MAP = {
+    "stable-diffusion": "sd-legacy/stable-diffusion-v1-5",
+    "roentgen": "stanfordmimi/RoentGen-v2",
+}
 
 
-def load_pipeline():
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Generate collage of X-ray images using LoRA fine-tuned diffusion models"
+    )
+    parser.add_argument(
+        "--lora_model_path",
+        type=str,
+        required=True,
+        help="Path to the LoRA weights directory",
+    )
+    parser.add_argument(
+        "--model_base",
+        type=str,
+        required=True,
+        choices=["stable-diffusion", "roentgen"],
+        help="Base model to use: 'stable-diffusion' or 'roentgen'",
+    )
+    return parser.parse_args()
+
+
+def load_pipeline(model_base, lora_model_path):
     """Load the Stable Diffusion pipeline with LoRA weights."""
-    # lora_model_path = (
-    #     "./latent_diffusion_finetuned/lora_weights/sd-1-5-btxrd-model-lora-rank-32-batch-4"
-    # )
-    lora_model_path = "./latent_diffusion_finetuned/lora_weights/roentgen-btxrd-model-lora-rank-32-batch-4-resolution-512"
-
     pipe = DiffusionPipeline.from_pretrained(model_base, use_safetensors=True)
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.load_lora_weights(lora_model_path)
@@ -142,6 +159,11 @@ def create_collage(
 
 
 def main():
+    args = parse_args()
+
+    model_base = MODEL_BASE_MAP[args.model_base]
+    lora_model_path = args.lora_model_path
+
     # Output directory
     base_output_dir = (
         f"./latent_diffusion_finetuned/generated_images/{model_base.replace('/', '_')}"
@@ -150,7 +172,7 @@ def main():
 
     # Load pipeline
     print("Loading Stable Diffusion pipeline...")
-    pipe = load_pipeline()
+    pipe = load_pipeline(model_base, lora_model_path)
 
     # Generate all combinations
     all_combinations = list(product(TUMOR_SUBTYPES, ANATOMICAL_LOCATIONS, VIEWS))
