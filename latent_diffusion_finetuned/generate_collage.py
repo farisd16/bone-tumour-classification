@@ -165,9 +165,8 @@ def main():
     lora_model_path = args.lora_model_path
 
     # Output directory
-    base_output_dir = (
-        f"./latent_diffusion_finetuned/generated_images/{model_base.replace('/', '_')}"
-    )
+    path_directories = lora_model_path.strip("/").split("/")
+    base_output_dir = f"./latent_diffusion_finetuned/generated_images/{path_directories[-2]}_{path_directories[-1]}_collages"
     os.makedirs(base_output_dir, exist_ok=True)
 
     # Load pipeline
