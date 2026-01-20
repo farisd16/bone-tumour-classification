@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=finetune-sd-1-5
-#SBATCH --output=./finetune-sd-1-5-%A.out
-#SBATCH --error=./finetune-sd-1-5-%A.err
+#SBATCH --job-name=generate-collage
+#SBATCH --output=./generate-collage-%A.out
+#SBATCH --error=./generate-collage-%A.err
 ##SBATCH --partition=universe,asteroids
 ##SBATCH --qos=master-queuesave
 #SBATCH --time=24:00:00
