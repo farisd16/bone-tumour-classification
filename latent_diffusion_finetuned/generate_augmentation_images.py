@@ -7,10 +7,10 @@ from tqdm import tqdm
 TUMOR_SUBTYPES = [
     "osteochondroma",
     "osteosarcoma",
-    "multiple osteochondromas",
-    "simple bone cyst",
-    "giant cell tumor",
-    "synovial osteochondroma",
+    "multiple_osteochondromas",
+    "simple_bone_cyst",
+    "giant_cell_tumor",
+    "synovial_osteochondroma",
     "osteofibroma",
 ]
 
@@ -116,7 +116,9 @@ def load_pipeline(model_base, lora_model_path):
 
 def generate_prompt(tumor_subtype, anatomical_location=None, view=None):
     """Generate the prompt string."""
-    prompt = f"X-ray image of {tumor_subtype}"
+    # Convert underscores back to spaces for the prompt
+    tumor_subtype_display = tumor_subtype.replace("_", " ")
+    prompt = f"X-ray image of {tumor_subtype_display}"
     if anatomical_location:
         prompt += f" in the {anatomical_location}"
     if view:
