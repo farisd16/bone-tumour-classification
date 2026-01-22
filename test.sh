@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=train
-#SBATCH --output=./train-%A.out
-#SBATCH --error=./train-%A.err
+#SBATCH --job-name=test
+#SBATCH --output=./test-%A.out
+#SBATCH --error=./test-%A.err
 ##SBATCH --partition=universe,asteroids
 ##SBATCH --qos=master-queuesave
 #SBATCH --time=24:00:00
@@ -18,13 +18,11 @@ conda deactivate
 # If the following does not work, try 'source activate <env-name>'
 conda activate bone-tumour-classification
 # Run the program
-# Usage: sbatch train.sh <synthetic_split> <run_name_prefix>
-# Example: sbatch train.sh data/dataset/split_step1.json resnet_diffusion-synthetic
-SYNTHETIC_SPLIT=${1:?"Error: SYNTHETIC_SPLIT not provided. Usage: sbatch train.sh <synthetic_split> <run_name_prefix>"}
-RUN_NAME_PREFIX=${2:?"Error: RUN_NAME_PREFIX not provided. Usage: sbatch train.sh <synthetic_split> <run_name_prefix>"}
+# Usage: sbatch test.sh <run_name>
+# Example: sbatch test.sh resnet_diffusion-synthetic_split_step1_wce_aug_2026-01-22_15-59-59
+RUN_NAME=${1:?"Error: RUN_NAME not provided. Usage: sbatch test.sh <run_name>"}
 
-srun python train.py \
-    --trainwsyn $SYNTHETIC_SPLIT \
-    --run-name-prefix $RUN_NAME_PREFIX
+srun python test.py \
+    --run-name $RUN_NAME
 
     
