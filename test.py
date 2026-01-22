@@ -18,7 +18,7 @@ from sklearn.metrics import (
 )
 import wandb
 
-#from utils import display_confusion_matrix
+# from utils import display_confusion_matrix
 from config import WANDB_ENTITY, WANDB_PROJECT
 
 """
@@ -142,12 +142,14 @@ print(f"\nTest Loss: {avg_test_loss:.4f} | Test Accuracy: {test_acc:.2f}%")
 precision_weighted = precision_score(all_labels, all_preds, average="weighted")
 recall_weighted = recall_score(all_labels, all_preds, average="weighted")
 f1_weighted = f1_score(all_labels, all_preds, average="weighted")
+f1_macro = f1_score(all_labels, all_preds, average="macro", zero_division=0)
 accuracy = accuracy_score(all_labels, all_preds)
 balanced_accuracy = balanced_accuracy_score(all_labels, all_preds)
 
 print("Weighted Precision:", precision_weighted)
 print("Weighted Recall:", recall_weighted)
 print("Weighted F1:", f1_weighted)
+print("Macro F1:", f1_macro)
 print("Accuracy:", accuracy)
 print("Balanced Accuracy:", balanced_accuracy)
 
@@ -156,6 +158,7 @@ test_run.log(
         "Weighted Precision": precision_weighted,
         "Weighted Recall": recall_weighted,
         "Weighted F1": f1_weighted,
+        "Macro F1": f1_macro,
         "Accuracy": accuracy,
         "Balanced Accuracy": balanced_accuracy,
     }
