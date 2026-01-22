@@ -107,7 +107,9 @@ def parse_args():
 
 def load_pipeline(model_base, lora_model_path):
     """Load the Stable Diffusion pipeline with LoRA weights."""
-    pipe = DiffusionPipeline.from_pretrained(model_base, use_safetensors=True)
+    pipe = DiffusionPipeline.from_pretrained(
+        model_base, use_safetensors=True, safety_checker=None
+    )
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.load_lora_weights(lora_model_path)
     pipe.to("cuda")

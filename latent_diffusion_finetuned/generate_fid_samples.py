@@ -30,7 +30,6 @@ LORA_MODEL_PATH = (
 )
 
 
-
 NUM_INFERENCE_STEPS = 25
 GUIDANCE_SCALE = 7.5
 LORA_SCALE = 0.7  # [0.7 to 1]
@@ -71,9 +70,12 @@ VIEWS = ["frontal", "lateral", "oblique"]
 # Pipeline helpers
 # -------------------------
 
+
 def load_pipeline():
     """Load the Stable Diffusion pipeline with LoRA weights."""
-    pipe = DiffusionPipeline.from_pretrained(MODEL_BASE, use_safetensors=True)
+    pipe = DiffusionPipeline.from_pretrained(
+        MODEL_BASE, use_safetensors=True, safety_checker=None
+    )
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.load_lora_weights(LORA_MODEL_PATH)
 
