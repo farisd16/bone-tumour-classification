@@ -1,5 +1,6 @@
 # lpips_eval.py
 import os
+import re
 import random
 import argparse
 from pathlib import Path
@@ -10,7 +11,7 @@ import torchvision.transforms as T
 import lpips
 
 
-IMG_EXTS = {".jpg",".jpeg"}
+IMG_EXTS = {".jpeg", ".png"}
 
 
 def list_images(folder: Path) -> List[Path]:
@@ -102,6 +103,37 @@ def eval_model_root(
     return results
 
 
+def normalize_class_name(name: str) -> str:
+    name = name.lower()
+    name = re.sub(r"[^a-z0-9]+", "_", name)
+    return re.sub(r"_+", "_", name).strip("_")
+
+
+def strip_generated_suffix(name: str) -> str:
+    # Matches folders like: class_name_gamma6_snapshot15800_trunc1.0
+    return re.split(r"_gamma\d+.*$", name)[0]
+
+
+def build_generated_class_map(gen_root: Path) -> Dict[str, List[Path]]:
+    mapping: Dict[str, List[Path]] = {}
+    for p in gen_root.iterdir():
+        if not p.is_dir():
+            continue
+        base = normalize_class_name(strip_generated_suffix(p.name))
+        mapping.setdefault(base, []).append(p)
+    return mapping
+
+
+def choose_best_generated_folder(paths: List[Path]) -> Path:
+    if len(paths) == 1:
+        return paths[0]
+    # Prefer highest snapshot number if present
+    def snapshot_num(p: Path) -> int:
+        m = re.search(r"snapshot(\d+)", p.name)
+        return int(m.group(1)) if m else -1
+    return sorted(paths, key=snapshot_num)[-1]
+
+
 def print_results(title: str, res: Dict[str, Dict[str, float]]):
     print(f"\n== {title} ==")
     for k, v in res.items():
@@ -114,12 +146,12 @@ def print_results(title: str, res: Dict[str, Dict[str, float]]):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stylegan_root", type=str, required=True,
-                    help="Root folder containing class subfolders for StyleGAN samples")
-    ap.add_argument("--diffusion_root", type=str, required=True,
-                    help="Root folder containing class subfolders for Diffusion samples")
-    ap.add_argument("--classes", type=str, nargs="+", required=True,
-                    help="List of class subfolder names, e.g. benign malignant")
+    ap.add_argument("--real_root", type=str, required=True,
+                    help="Root folder containing class subfolders for real samples")
+    ap.add_argument("--gen_root", type=str, required=True,
+                    help="Root folder containing generated class subfolders")
+    ap.add_argument("--classes", type=str, nargs="+", default=None,
+                    help="Optional list of class subfolder names (defaults to all under real_root)")
     ap.add_argument("--pairs", type=int, default=10000, help="Random pairs per class")
     ap.add_argument("--img_size", type=int, default=256, help="Resize images to this")
     ap.add_argument("--backbone", type=str, default="alex", choices=["alex", "vgg", "squeeze"],
@@ -128,17 +160,52 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
-    stylegan_res = eval_model_root(
-        Path(args.stylegan_root), args.classes, args.backbone,
-        args.img_size, args.pairs, args.device, args.seed
-    )
-    diffusion_res = eval_model_root(
-        Path(args.diffusion_root), args.classes, args.backbone,
+    real_root = Path(args.real_root)
+    gen_root = Path(args.gen_root)
+
+    if args.classes:
+        classes = args.classes
+    else:
+        classes = sorted([p.name for p in real_root.iterdir() if p.is_dir()])
+
+    gen_map = build_generated_class_map(gen_root)
+    resolved_classes = []
+    for c in classes:
+        key = normalize_class_name(c)
+        if key not in gen_map:
+            print(f"Warning: no generated folder found for class '{c}' (key: {key})")
+            continue
+        if len(gen_map[key]) > 1:
+            picked = choose_best_generated_folder(gen_map[key])
+            print(f"Warning: multiple generated folders for '{c}', using '{picked.name}'")
+        resolved_classes.append(c)
+
+    real_res = eval_model_root(
+        real_root, resolved_classes, args.backbone,
         args.img_size, args.pairs, args.device, args.seed
     )
 
-    print_results("StyleGAN2-ADA", stylegan_res)
-    print_results("Diffusion", diffusion_res)
+    # Evaluate generated folders using resolved mapping
+    gen_res = {}
+    loss_fn = lpips.LPIPS(net=args.backbone).to(args.device)
+    loss_fn.eval()
+    for c in resolved_classes:
+        key = normalize_class_name(c)
+        gen_folder = choose_best_generated_folder(gen_map[key])
+        mean, std, k = lpips_intra_class(gen_folder, loss_fn, args.img_size, args.pairs, args.device, args.seed)
+        gen_res[c] = {"mean": mean, "std": std, "pairs": k}
+
+    if len(gen_res) > 0:
+        means = [v["mean"] for v in gen_res.values() if not (v["mean"] != v["mean"])]
+        stds = [v["std"] for v in gen_res.values() if not (v["std"] != v["std"])]
+        macro_mean = float(torch.tensor(means).mean()) if means else float("nan")
+        macro_std = float(torch.tensor(stds).mean()) if stds else float("nan")
+        gen_res["_macro"] = {"mean": macro_mean, "std": macro_std, "pairs": args.pairs}
+    else:
+        gen_res["_macro"] = {"mean": float("nan"), "std": float("nan"), "pairs": args.pairs}
+
+    print_results("Real", real_res)
+    print_results("Generated", gen_res)
 
 
 if __name__ == "__main__":
