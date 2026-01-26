@@ -1,5 +1,6 @@
 import os
 import argparse
+import random
 from datetime import datetime
 from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler
 from tqdm import tqdm
@@ -58,13 +59,6 @@ def parse_args():
         help="Base model to use: 'stable-diffusion' or 'roentgen'",
     )
     parser.add_argument(
-        "--anatomical_location",
-        type=str,
-        default=None,
-        choices=ANATOMICAL_LOCATIONS,
-        help=f"Anatomical location (optional). Choices: {ANATOMICAL_LOCATIONS}",
-    )
-    parser.add_argument(
         "--tumor_subtype",
         type=str,
         required=True,
@@ -84,11 +78,9 @@ def parse_args():
         help="Number of images to generate",
     )
     parser.add_argument(
-        "--view",
-        type=str,
-        default=None,
-        choices=VIEWS,
-        help=f"View type. If not specified, generates images for all views. Choices: {VIEWS}",
+        "--use_detailed_prompt",
+        action="store_true",
+        help="If set, randomly sample anatomical location and view for each image prompt",
     )
     parser.add_argument(
         "--num_inference_steps",
@@ -150,18 +142,12 @@ def main():
     # Output directory - same naming convention as generate_collage.py
     path_directories = lora_model_path.strip("/").split("/")
 
-    # Create directory name with tumor/location/view combination
+    # Create directory name with tumor combination
     safe_tumor = args.tumor_subtype.replace(" ", "_")
-    safe_location = (
-        args.anatomical_location.replace("-", "_") if args.anatomical_location else None
-    )
-    safe_view = args.view.replace(" ", "_") if args.view else None
 
     dir_parts = [path_directories[-2], path_directories[-1], "augmentation", safe_tumor]
-    if safe_location:
-        dir_parts.append(safe_location)
-    if safe_view:
-        dir_parts.append(safe_view)
+    if args.use_detailed_prompt:
+        dir_parts.append("detailed")
     timestamp = datetime.now().strftime("%H-%M-%S")
     dir_parts.append(timestamp)
     output_dir = os.path.join("./generated_images", "_".join(dir_parts))
@@ -172,65 +158,52 @@ def main():
     print(lora_model_path)
     pipe = load_pipeline(model_base, lora_model_path)
 
-    # Determine views to generate
-    if args.view:
-        views_to_generate = [args.view]
-    elif args.view is None:
-        # No view specified - generate without view in prompt
-        views_to_generate = [None]
-
-    # Calculate images per view
-    images_per_view = args.num_images // len(views_to_generate)
-    remainder = args.num_images % len(views_to_generate)
-
     print(f"\n{'=' * 60}")
     print(f"Generating {args.num_images} images")
     print(f"Tumor subtype: {args.tumor_subtype}")
-    print(f"Anatomical location: {args.anatomical_location or 'not specified'}")
-    print(
-        f"Views: {views_to_generate if views_to_generate != [None] else 'not specified'}"
-    )
+    print(f"Use detailed prompt: {args.use_detailed_prompt}")
     print(f"LoRA scale: {args.lora_scale}")
     print(f"Output directory: {output_dir}")
     print(f"{'=' * 60}\n")
 
     total_generated = 0
-    for view_idx, view in enumerate(views_to_generate):
-        # Distribute remainder images to first few views
-        num_for_this_view = images_per_view + (1 if view_idx < remainder else 0)
+    for i in tqdm(range(args.num_images), desc="Generating images"):
+        try:
+            # Sample anatomical location and view if using detailed prompts
+            if args.use_detailed_prompt:
+                anatomical_location = random.choice(ANATOMICAL_LOCATIONS)
+                view = random.choice(VIEWS)
+            else:
+                anatomical_location = None
+                view = None
 
-        if num_for_this_view == 0:
-            continue
+            prompt = generate_prompt(args.tumor_subtype, anatomical_location, view)
 
-        prompt = generate_prompt(args.tumor_subtype, args.anatomical_location, view)
-        print(f"Prompt: {prompt}")
+            if i == 0 or args.use_detailed_prompt:
+                print(f"Prompt: {prompt}")
 
-        for i in tqdm(
-            range(num_for_this_view),
-            desc=f"Generating{' ' + view if view else ''} images",
-        ):
-            try:
-                image = generate_image(
-                    pipe,
-                    prompt,
-                    num_inference_steps=args.num_inference_steps,
-                    guidance_scale=args.guidance_scale,
-                    lora_scale=args.lora_scale,
-                )
+            image = generate_image(
+                pipe,
+                prompt,
+                num_inference_steps=args.num_inference_steps,
+                guidance_scale=args.guidance_scale,
+                lora_scale=args.lora_scale,
+            )
 
-                # Save image
-                filename_parts = [safe_tumor]
-                if safe_location:
-                    filename_parts.append(safe_location)
-                if view:
-                    filename_parts.append(view.replace(" ", "_"))
-                filename_parts.append(f"{total_generated:04d}")
-                filename = "_".join(filename_parts) + ".png"
-                image.save(os.path.join(output_dir, filename))
-                total_generated += 1
+            # Save image
+            filename_parts = [safe_tumor]
+            if args.use_detailed_prompt:
+                safe_location = anatomical_location.replace("-", "_")
+                safe_view = view.replace(" ", "_")
+                filename_parts.append(safe_location)
+                filename_parts.append(safe_view)
+            filename_parts.append(f"{total_generated:04d}")
+            filename = "_".join(filename_parts) + ".png"
+            image.save(os.path.join(output_dir, filename))
+            total_generated += 1
 
-            except Exception as e:
-                print(f"Error generating image {i} for '{prompt}': {e}")
+        except Exception as e:
+            print(f"Error generating image {i}: {e}")
 
     print(f"\n{'=' * 60}")
     print(f"Done! Generated {total_generated} images.")
