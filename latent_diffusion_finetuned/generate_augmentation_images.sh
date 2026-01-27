@@ -29,6 +29,5 @@ srun python generate_augmentation_images.py \
     --lora_model_path $LORA_MODEL_PATH \
     --model_base $MODEL_BASE \
     --num_images $NUM_IMAGES \
-    --tumor_subtype $TUMOR_SUBTYPE
-
-    
+    --tumor_subtype $TUMOR_SUBTYPE \
+    --use_detailed_prompt
