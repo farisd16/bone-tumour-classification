@@ -5,7 +5,9 @@ from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler
 model_base = "sd-legacy/stable-diffusion-v1-5"
 lora_model_path = "./latent_diffusion_finetuned/lora_weights/sd-1-5-btxrd-model-lora-rank-32-batch-4/checkpoint-5000"
 
-pipe = DiffusionPipeline.from_pretrained(model_base, use_safetensors=True)
+pipe = DiffusionPipeline.from_pretrained(
+    model_base, use_safetensors=True, safety_checker=None
+)
 pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
 pipe.load_lora_weights(lora_model_path)
 pipe.to("cuda")
