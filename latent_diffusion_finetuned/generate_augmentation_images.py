@@ -68,8 +68,8 @@ def parse_args():
     parser.add_argument(
         "--lora_scale",
         type=float,
-        default=0.95,
-        help="LoRA scale for generation (default: 0.95)",
+        default=1,
+        help="LoRA scale for generation (default: 1)",
     )
     parser.add_argument(
         "--num_images",
@@ -121,7 +121,7 @@ def generate_prompt(tumor_subtype, anatomical_location=None, view=None):
 
 
 def generate_image(
-    pipe, prompt, num_inference_steps=25, guidance_scale=7.5, lora_scale=0.95
+    pipe, prompt, num_inference_steps=25, guidance_scale=7.5, lora_scale=1
 ):
     """Generate a single image from a prompt."""
     image = pipe(
