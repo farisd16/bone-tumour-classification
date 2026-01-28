@@ -96,7 +96,7 @@ class CustomDataset(Dataset):
         self.samples = []
         self._tumor_by_img_path: Dict[str, str] = {}
 
-        for fname in os.listdir(image_dir):
+        for fname in sorted(os.listdir(image_dir)):
             if not fname.lower().endswith(".jpeg"):
                 continue
 
