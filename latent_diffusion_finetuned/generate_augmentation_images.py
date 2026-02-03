@@ -148,7 +148,7 @@ def main():
     dir_parts = [path_directories[-2], path_directories[-1], "augmentation", safe_tumor]
     if args.use_detailed_prompt:
         dir_parts.append("detailed")
-    timestamp = datetime.now().strftime("%H-%M-%S")
+    timestamp = datetime.now().strftime("%m-%d_%H-%M-%S")
     dir_parts.append(timestamp)
     output_dir = os.path.join("./generated_images", "_".join(dir_parts))
     os.makedirs(output_dir, exist_ok=True)
