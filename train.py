@@ -18,7 +18,7 @@ from train_utils import EarlyStopper, build_splits_and_loaders, FocalLoss
 
 
 DEFAULT_CONFIG: Dict[str, Any] = {
-    "architecture": "ResNet34",
+    "architecture": "resnet34",
     "learning_rate": 0.0002773728390451098,
     "weight_decay": 0.00001,
     "batch_size": 32,
@@ -196,7 +196,7 @@ def parse_cli_args() -> argparse.Namespace:
         "--num-classes",
         "--num_classes",
         dest="num_classes",
-        type=int, 
+        type=int,
         default=DEFAULT_CONFIG["num_classes"],
         help="Number of output classes",
     )
@@ -204,7 +204,8 @@ def parse_cli_args() -> argparse.Namespace:
         "--architecture",
         type=str,
         default=DEFAULT_CONFIG["architecture"],
-        help="Backbone architecture to finetune (currently only ResNet34)",
+        choices=["resnet34", "resnet50"],
+        help="Backbone architecture to finetune",
     )
     parser.add_argument(
         "--trainwsyn",
@@ -301,12 +302,17 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
             )
 
             architecture = cfg.architecture
-            if architecture != "ResNet34":
+            if architecture == "resnet34":
+                model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
+                num_features = 512
+            elif architecture == "resnet50":
+                model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
+                num_features = 2048
+            else:
                 raise ValueError(f"Unsupported architecture: {architecture}")
-            model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
             model.fc = nn.Sequential(
                 nn.Dropout(float(cfg.dropout)),
-                nn.Linear(512, int(cfg.num_classes)),
+                nn.Linear(num_features, int(cfg.num_classes)),
             )
             model.to(device)
 
