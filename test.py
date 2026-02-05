@@ -40,6 +40,29 @@ parser.add_argument(
     required=True,
     help="W&B display name and corresponding checkpoint folder inside 'checkpoints'",
 )
+parser.add_argument(
+    "--image-dir",
+    "--image_dir",
+    dest="image_dir",
+    type=str,
+    default=os.path.join("data", "dataset", "final_patched_BTXRD"),
+    help="Path to the directory containing images",
+)
+parser.add_argument(
+    "--json-dir",
+    "--json_dir",
+    dest="json_dir",
+    type=str,
+    default=os.path.join("data", "dataset", "BTXRD", "Annotations"),
+    help="Path to the directory containing JSON annotations",
+)
+parser.add_argument(
+    "--architecture",
+    type=str,
+    default="resnet34",
+    choices=["resnet34", "resnet50"],
+    help="Backbone architecture used during training",
+)
 args = parser.parse_args()
 run_name = args.run_name
 run_dir = os.path.join(checkoint_base_dir, run_name)
@@ -54,9 +77,8 @@ transform = transforms.Compose(
     ]
 )
 
-DATASET_DIR = os.path.join("data", "dataset")
-image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"
-json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
+image_dir = Path(args.image_dir)
+json_dir = Path(args.json_dir)
 
 # Dataset
 dataset_folder_path = os.path.join("data", "dataset")
@@ -75,10 +97,17 @@ test_dataset = Subset(dataset, test_indices)
 test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 # Model
-model = models.resnet34(weights=None)
+if args.architecture == "resnet34":
+    model = models.resnet34(weights=None)
+    num_features = 512
+elif args.architecture == "resnet50":
+    model = models.resnet50(weights=None)
+    num_features = 2048
+else:
+    raise ValueError(f"Unsupported architecture: {args.architecture}")
 model.fc = nn.Sequential(
     nn.Dropout(0.5),
-    nn.Linear(512, 7),
+    nn.Linear(num_features, 7),
 )
 # Safe checkpoint load to avoid pickle execution warning
 try:

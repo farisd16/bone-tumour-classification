@@ -31,8 +31,8 @@ echo "Created sweep with ID: $SWEEP_ID"
 # Run the sweep agent
 if [ -n "$COUNT" ]; then
     echo "Running $COUNT agents..."
-    srun wandb agent --count $COUNT $SWEEP_ID
+    wandb agent --count $COUNT $SWEEP_ID
 else
     echo "Running agents until sweep completes..."
-    srun wandb agent $SWEEP_ID
+    wandb agent $SWEEP_ID
 fi

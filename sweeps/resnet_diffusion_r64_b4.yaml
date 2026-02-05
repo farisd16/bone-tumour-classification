@@ -19,19 +19,19 @@ parameters:
   batch_size:
     values: [8, 16, 32]
   epochs:
-    value: 30
+    value: 40
   dropout:
     distribution: uniform
     min: 0.2
     max: 0.6
   loss_fn:
-    values: ["ce", "wce", "focal", "wfocal"]
+    values: ["ce", "wce"]
   apply_minority_aug:
     values: [false]
   early_stop:
     values: [true]
   early_stop_patience:
-    value: 10
+    value: 15
   scheduler_factor:
     value: 0.5
   scheduler_patience:
