@@ -170,6 +170,12 @@ def main():
     ap.add_argument(
         "--input_images",
         type=Path,
+        default="data/dataset/final_patched_BTXRD",
+        help="input dir for original images to copy",
+    )
+    ap.add_argument(
+        "--synthetic_images",
+        type=Path,
         default="generated_images",
         help="root folder with class subfolders containing synthetic images",
     )
@@ -213,9 +219,33 @@ def main():
     out_dir = args.output_split if args.output_split else args.input_split.parent
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Ensure input_images is provided for multi-step processing.
-    if args.input_images is None:
-        raise ValueError("--input_images is required for multi-step split generation.")
+    # Ensure synthetic_images is provided for multi-step processing.
+    if args.synthetic_images is None:
+        raise ValueError(
+            "--synthetic_images is required for multi-step split generation."
+        )
+
+    # Copy original images from input_images to output_images.
+    if args.input_images and args.input_images.exists():
+        args.output_images.mkdir(parents=True, exist_ok=True)
+        for img_file in args.input_images.iterdir():
+            if img_file.is_file():
+                dst = args.output_images / img_file.name
+                if not dst.exists():
+                    shutil.copy2(str(img_file), str(dst))
+        print(f"Copied images from {args.input_images} to {args.output_images}")
+
+    # Copy annotations from input_annotations to output_annotations.
+    if args.input_annotations and args.input_annotations.exists():
+        args.output_annotations.mkdir(parents=True, exist_ok=True)
+        for ann_file in args.input_annotations.iterdir():
+            if ann_file.is_file() and ann_file.suffix.lower() == ".json":
+                dst = args.output_annotations / ann_file.name
+                if not dst.exists():
+                    shutil.copy2(str(ann_file), str(dst))
+        print(
+            f"Copied annotations from {args.input_annotations} to {args.output_annotations}"
+        )
 
     label_map = _class_label_map()
     # Use a local RNG so random selection can be controlled with --seed.
@@ -225,7 +255,7 @@ def main():
     all_class_names = set()
     for step in STEPS:
         all_class_names.update(step.keys())
-    files_by_class = _collect_files_by_class(args.input_images, all_class_names)
+    files_by_class = _collect_files_by_class(args.synthetic_images, all_class_names)
 
     # Track current index and image number across all steps.
     current_idx = args.start_idx
