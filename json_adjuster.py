@@ -93,8 +93,10 @@ def _class_label_map():
 # -----------------------------
 def _collect_files_by_class(gen_root: Path, class_names):
     # Scan all subfolders under gen_root and group images by class.
-    # A subfolder is assigned to the first class whose normalized name
-    # appears in the normalized folder name (substring match).
+    # A subfolder is assigned to the class whose normalized name appears
+    # in the normalized folder name (substring match). We sort class names
+    # by length (longest first) to prefer more specific matches, e.g.,
+    # "multiple_osteochondromas" before "osteochondroma".
     #
     # Example:
     #   Folder: "upper_limb_osteofibroma_gamma6_snapshot158354354_trunc1.354"
@@ -104,11 +106,13 @@ def _collect_files_by_class(gen_root: Path, class_names):
     files_by_class = {cls: [] for cls in class_names}
     if not gen_root.exists():
         raise FileNotFoundError(f"gen-root not found: {gen_root}")
+    # Sort class names by length (longest first) to prefer more specific matches.
+    sorted_class_names = sorted(class_names, key=len, reverse=True)
     for subdir in gen_root.iterdir():
         if not subdir.is_dir():
             continue
         subdir_norm = _normalize_class_name(subdir.name)
-        for cls in class_names:
+        for cls in sorted_class_names:
             if cls in subdir_norm:
                 # Collect all image files in this matching folder.
                 files = [
