@@ -15,8 +15,8 @@ eval "$(conda shell.bash hook)"
 conda deactivate
 conda activate bone-tumour-classification
 
-# Number of sweep runs to execute (default: 10)
-COUNT=${1:-10}
+# Number of sweep runs to execute (optional)
+COUNT=${1:-}
 
 # Create the sweep and capture the sweep ID
 SWEEP_ID=$(wandb sweep sweeps/resnet_diffusion_r32_b4.yaml 2>&1 | grep -oP 'wandb agent \K[^ ]+')
@@ -27,7 +27,12 @@ if [ -z "$SWEEP_ID" ]; then
 fi
 
 echo "Created sweep with ID: $SWEEP_ID"
-echo "Running $COUNT agents..."
 
 # Run the sweep agent
-srun wandb agent --count $COUNT $SWEEP_ID
+if [ -n "$COUNT" ]; then
+    echo "Running $COUNT agents..."
+    srun wandb agent --count $COUNT $SWEEP_ID
+else
+    echo "Running agents until sweep completes..."
+    srun wandb agent $SWEEP_ID
+fi
