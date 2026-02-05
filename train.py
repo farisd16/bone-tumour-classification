@@ -37,6 +37,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "num_classes": 7,
     "run_name_prefix": "resnet_synthetic",
     "trainwsyn": None,
+    "image_dir": os.path.join("data", "dataset", "final_patched_BTXRD"),
+    "json_dir": os.path.join("data", "dataset", "BTXRD", "Annotations"),
 }
 
 
@@ -214,6 +216,22 @@ def parse_cli_args() -> argparse.Namespace:
         default=DEFAULT_CONFIG["trainwsyn"],
         help="Path to a precomputed split JSON to use instead of creating one",
     )
+    parser.add_argument(
+        "--image-dir",
+        "--image_dir",
+        dest="image_dir",
+        type=str,
+        default=DEFAULT_CONFIG["image_dir"],
+        help="Path to the directory containing images",
+    )
+    parser.add_argument(
+        "--json-dir",
+        "--json_dir",
+        dest="json_dir",
+        type=str,
+        default=DEFAULT_CONFIG["json_dir"],
+        help="Path to the directory containing JSON annotations",
+    )
     return parser.parse_args()
 
 
@@ -239,6 +257,8 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
         "run_name_prefix": args.run_name_prefix,
         "architecture": args.architecture,
         "trainwsyn": args.trainwsyn,
+        "image_dir": args.image_dir,
+        "json_dir": args.json_dir,
     }
 
 
@@ -266,9 +286,8 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
     run_dir = os.path.join(checkpoints_base_dir, run_name)
     os.makedirs(run_dir, exist_ok=True)
 
-    DATASET_DIR = os.path.join("data", "dataset")
-    image_dir = Path(DATASET_DIR) / "final_patched_BTXRD"
-    json_dir = Path(DATASET_DIR) / "BTXRD" / "Annotations"
+    image_dir = Path(base_config.get("image_dir", DEFAULT_CONFIG["image_dir"]))
+    json_dir = Path(base_config.get("json_dir", DEFAULT_CONFIG["json_dir"]))
 
     with wandb.init(
         entity=WANDB_ENTITY,

@@ -60,7 +60,7 @@ def save_json(obj, path: Path):
 def img_name(n: int, ext: str):
     # Create the canonical image filename used by the dataset.
     # Example: n=1868, ext="jpeg" -> "IMG0001868.jpeg"
-    return f"IMG{n:07d}.{ext}"
+    return f"IMG{n:06d}.{ext}"
 
 
 # -----------------------------
@@ -156,34 +156,40 @@ def main():
     # CLI configuration.
     ap = argparse.ArgumentParser()
     ap.add_argument(
-        "--split",
+        "--input_split",
         type=Path,
         default="data/dataset/splits/dataset_split_final.json",
         help="split.json input",
     )
     ap.add_argument(
-        "--out",
+        "--output_split",
         type=Path,
         default="data/dataset/splits",
         help="output directory for split files",
     )
     ap.add_argument(
-        "--gen-root",
+        "--input_images",
         type=Path,
         default="generated_images",
         help="root folder with class subfolders containing synthetic images",
     )
     ap.add_argument(
-        "--target-dir",
+        "--output_images",
         type=Path,
         default="data/dataset/final_patched_BTXRD",
         help="output dir for selected images",
     )
     ap.add_argument(
-        "--annotations-dir",
+        "--input_annotations",
         type=Path,
         default="data/dataset/BTXRD/Annotations",
-        help="output dir for annotation jsons",
+        help="input dir for annotation jsons",
+    )
+    ap.add_argument(
+        "--output_annotations",
+        type=Path,
+        default="data/dataset/BTXRD/Annotations",
+        help="output dir for new annotation jsons",
     )
     ap.add_argument("--seed", type=int, default=42, help="random seed for sampling")
     ap.add_argument(
@@ -199,17 +205,17 @@ def main():
     args = ap.parse_args()
 
     # Load existing split and validate basic structure.
-    original_split = load_json(args.split)
+    original_split = load_json(args.input_split)
     if "train" not in original_split or not isinstance(original_split["train"], list):
         raise ValueError("Input split JSON must contain a list under 'train'.")
 
-    # Determine output directory for split files.
-    out_dir = args.out if args.out else args.split.parent
+    # Determine output directory for split files (same as input split directory).
+    out_dir = args.output_split if args.output_split else args.input_split.parent
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Ensure gen_root is provided for multi-step processing.
-    if args.gen_root is None:
-        raise ValueError("--gen-root is required for multi-step split generation.")
+    # Ensure input_images is provided for multi-step processing.
+    if args.input_images is None:
+        raise ValueError("--input_images is required for multi-step split generation.")
 
     label_map = _class_label_map()
     # Use a local RNG so random selection can be controlled with --seed.
@@ -219,7 +225,7 @@ def main():
     all_class_names = set()
     for step in STEPS:
         all_class_names.update(step.keys())
-    files_by_class = _collect_files_by_class(args.gen_root, all_class_names)
+    files_by_class = _collect_files_by_class(args.input_images, all_class_names)
 
     # Track current index and image number across all steps.
     current_idx = args.start_idx
@@ -261,19 +267,19 @@ def main():
             split["train"].append(new_idx)
 
             # Copy the image into the target dataset folder with standardized name.
-            args.target_dir.mkdir(parents=True, exist_ok=True)
+            args.output_images.mkdir(parents=True, exist_ok=True)
             src = selected_files[i][0]
-            dst = args.target_dir / new_filename
+            dst = args.output_images / new_filename
             if dst.exists():
                 raise FileExistsError(f"Refusing to overwrite: {dst}")
             shutil.copy2(str(src), str(dst))
 
             # Write a minimal Labelme-style annotation JSON.
             label = selected_files[i][1]
-            args.annotations_dir.mkdir(parents=True, exist_ok=True)
+            args.output_annotations.mkdir(parents=True, exist_ok=True)
             image_path = new_filename
             ann_path = (
-                args.annotations_dir / Path(new_filename).with_suffix(".json").name
+                args.output_annotations / Path(new_filename).with_suffix(".json").name
             )
             if ann_path.exists():
                 raise FileExistsError(f"Refusing to overwrite: {ann_path}")

@@ -1,0 +1,54 @@
+project: bone-tumor-classification
+entity: faris-demirovic-tum-technical-university-of-munich
+program: train.py
+method: bayes
+metric:
+  name: Accuracy/Val
+  goal: maximize
+parameters:
+  architecture:
+    values: [resnet34, resnet50]
+  run_name_prefix:
+    value: resnet_diffusion_r32_b4
+  learning_rate:
+    distribution: log_uniform_values
+    min: 1.0e-5
+    max: 3.0e-4
+  weight_decay:
+    values: [0.0, 1.0e-5, 1.0e-4]
+  batch_size:
+    values: [8, 16, 32]
+  epochs:
+    value: 30
+  dropout:
+    distribution: uniform
+    min: 0.2
+    max: 0.6
+  loss_fn:
+    values: ["ce", "wce", "focal", "wfocal"]
+  apply_minority_aug:
+    values: [false]
+  early_stop:
+    values: [true]
+  early_stop_patience:
+    value: 10
+  scheduler_factor:
+    value: 0.5
+  scheduler_patience:
+    values: [2, 3, 4]
+  test_size:
+    value: 0.2
+  random_state:
+    value: 42
+  num_classes:
+    value: 7
+  trainwsyn:
+    values:
+      [
+        data/dataset/splits_r32_b4/split_step6.json,
+        data/dataset/splits_r32_b4/split_step7.json,
+      ]
+  image_dir:
+    value: data/dataset/BTXRD_images_r32_b4
+  json_dir:
+    value: data/dataset/BTXRD/Annotations_r32_b4
