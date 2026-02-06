@@ -62,8 +62,14 @@ def parse_args():
         "--tumor_subtype",
         type=str,
         required=True,
-        choices=TUMOR_SUBTYPES,
-        help=f"Tumor subtype. Choices: {TUMOR_SUBTYPES}",
+        choices=TUMOR_SUBTYPES + ["all"],
+        help=f"Tumor subtype. Choices: {TUMOR_SUBTYPES + ['all']}. Use 'all' to generate images for all subtypes.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default=None,
+        help="Output directory for generated images. If not provided, a default directory will be created.",
     )
     parser.add_argument(
         "--lora_scale",
@@ -133,41 +139,45 @@ def generate_image(
     return image
 
 
-def main():
-    args = parse_args()
+def get_output_dir(args, tumor_subtype):
+    """Get the output directory for a given tumor subtype."""
+    if args.output_dir:
+        # If output_dir is provided, create subfolders for each tumor type when using 'all'
+        if args.tumor_subtype == "all":
+            return os.path.join(args.output_dir, tumor_subtype)
+        return args.output_dir
+    else:
+        # Default directory naming convention
+        path_directories = args.lora_model_path.strip("/").split("/")
+        safe_tumor = tumor_subtype.replace(" ", "_")
+        dir_parts = [
+            path_directories[-2],
+            path_directories[-1],
+            "augmentation",
+            safe_tumor,
+        ]
+        if args.use_detailed_prompt:
+            dir_parts.append("detailed")
+        timestamp = datetime.now().strftime("%m-%d_%H-%M-%S")
+        dir_parts.append(timestamp)
+        return os.path.join("./generated_images", "_".join(dir_parts))
 
-    model_base = MODEL_BASE_MAP[args.model_base]
-    lora_model_path = args.lora_model_path
 
-    # Output directory - same naming convention as generate_collage.py
-    path_directories = lora_model_path.strip("/").split("/")
-
-    # Create directory name with tumor combination
-    safe_tumor = args.tumor_subtype.replace(" ", "_")
-
-    dir_parts = [path_directories[-2], path_directories[-1], "augmentation", safe_tumor]
-    if args.use_detailed_prompt:
-        dir_parts.append("detailed")
-    timestamp = datetime.now().strftime("%m-%d_%H-%M-%S")
-    dir_parts.append(timestamp)
-    output_dir = os.path.join("./generated_images", "_".join(dir_parts))
+def generate_images_for_subtype(pipe, args, tumor_subtype, output_dir):
+    """Generate images for a single tumor subtype."""
     os.makedirs(output_dir, exist_ok=True)
-
-    # Load pipeline
-    print("Loading Stable Diffusion pipeline...")
-    print(lora_model_path)
-    pipe = load_pipeline(model_base, lora_model_path)
+    safe_tumor = tumor_subtype.replace(" ", "_")
 
     print(f"\n{'=' * 60}")
     print(f"Generating {args.num_images} images")
-    print(f"Tumor subtype: {args.tumor_subtype}")
+    print(f"Tumor subtype: {tumor_subtype}")
     print(f"Use detailed prompt: {args.use_detailed_prompt}")
     print(f"LoRA scale: {args.lora_scale}")
     print(f"Output directory: {output_dir}")
     print(f"{'=' * 60}\n")
 
     total_generated = 0
-    for i in tqdm(range(args.num_images), desc="Generating images"):
+    for i in tqdm(range(args.num_images), desc=f"Generating {tumor_subtype} images"):
         try:
             # Sample anatomical location and view if using detailed prompts
             if args.use_detailed_prompt:
@@ -177,7 +187,7 @@ def main():
                 anatomical_location = None
                 view = None
 
-            prompt = generate_prompt(args.tumor_subtype, anatomical_location, view)
+            prompt = generate_prompt(tumor_subtype, anatomical_location, view)
 
             if i == 0 or args.use_detailed_prompt:
                 print(f"Prompt: {prompt}")
@@ -205,9 +215,40 @@ def main():
         except Exception as e:
             print(f"Error generating image {i}: {e}")
 
+    return total_generated
+
+
+def main():
+    args = parse_args()
+
+    model_base = MODEL_BASE_MAP[args.model_base]
+    lora_model_path = args.lora_model_path
+
+    # Load pipeline
+    print("Loading Stable Diffusion pipeline...")
+    print(lora_model_path)
+    pipe = load_pipeline(model_base, lora_model_path)
+
+    # Determine which tumor subtypes to generate
+    if args.tumor_subtype == "all":
+        tumor_subtypes = TUMOR_SUBTYPES
+    else:
+        tumor_subtypes = [args.tumor_subtype]
+
+    grand_total = 0
+    for tumor_subtype in tumor_subtypes:
+        output_dir = get_output_dir(args, tumor_subtype)
+        total_generated = generate_images_for_subtype(
+            pipe, args, tumor_subtype, output_dir
+        )
+        grand_total += total_generated
+        print(f"\nDone with {tumor_subtype}! Generated {total_generated} images.")
+        print(f"Images saved in: {output_dir}")
+
     print(f"\n{'=' * 60}")
-    print(f"Done! Generated {total_generated} images.")
-    print(f"Images saved in: {output_dir}")
+    print(
+        f"All done! Generated {grand_total} total images across {len(tumor_subtypes)} tumor subtype(s)."
+    )
     print(f"{'=' * 60}")
 
 
