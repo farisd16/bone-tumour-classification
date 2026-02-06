@@ -3,7 +3,7 @@
 #SBATCH --output=./generate-augmentation-images-%A.out
 #SBATCH --error=./generate-augmentation-images-%A.err
 ##SBATCH --partition=universe,asteroids
-##SBATCH --qos=master-queuesave
+#SBATCH --qos=master-queuesave
 #SBATCH --time=24:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
