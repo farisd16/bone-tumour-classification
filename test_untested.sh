@@ -28,8 +28,6 @@ if [ -z "$INFIX" ]; then
     exit 1
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 # Load python module and activate environment
 ml python/anaconda3 2>/dev/null || true
 eval "$(conda shell.bash hook)"
@@ -38,7 +36,7 @@ conda activate bone-tumour-classification
 
 # Find untested runs
 echo "Finding untested runs matching '$INFIX'..."
-mapfile -t RUNS < <(python "$SCRIPT_DIR/find_untested_runs.py" --infix "$INFIX")
+mapfile -t RUNS < <(python "find_untested_runs.py" --infix "$INFIX")
 
 NUM_RUNS=${#RUNS[@]}
 
@@ -61,7 +59,7 @@ for i in "${!RUNS[@]}"; do
     echo "[$((i+1))/$NUM_RUNS] Testing: $RUN_NAME (arch: $ARCH)"
     echo "========================================"
     
-    python "$SCRIPT_DIR/test.py" --run-name "$RUN_NAME" --architecture "$ARCH"
+    python "test.py" --run-name "$RUN_NAME" --architecture "$ARCH"
     
     echo ""
 done
