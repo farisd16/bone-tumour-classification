@@ -55,6 +55,15 @@ for i in "${!RUNS[@]}"; do
     RUN_NAME="${ENTRY%%|*}"
     ARCH="${ENTRY##*|}"
     
+    # Check if checkpoint folder exists
+    if [ ! -d "checkpoints/$RUN_NAME" ]; then
+        echo "========================================"
+        echo "[$((i+1))/$NUM_RUNS] SKIPPING: $RUN_NAME (checkpoint folder not found)"
+        echo "========================================"
+        echo ""
+        continue
+    fi
+    
     echo "========================================"
     echo "[$((i+1))/$NUM_RUNS] Testing: $RUN_NAME (arch: $ARCH)"
     echo "========================================"
