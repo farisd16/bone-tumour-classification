@@ -41,22 +41,6 @@ parser.add_argument(
     help="W&B display name and corresponding checkpoint folder inside 'checkpoints'",
 )
 parser.add_argument(
-    "--image-dir",
-    "--image_dir",
-    dest="image_dir",
-    type=str,
-    default=os.path.join("data", "dataset", "final_patched_BTXRD"),
-    help="Path to the directory containing images",
-)
-parser.add_argument(
-    "--json-dir",
-    "--json_dir",
-    dest="json_dir",
-    type=str,
-    default=os.path.join("data", "dataset", "BTXRD", "Annotations"),
-    help="Path to the directory containing JSON annotations",
-)
-parser.add_argument(
     "--architecture",
     type=str,
     default="resnet34",
@@ -77,8 +61,8 @@ transform = transforms.Compose(
     ]
 )
 
-image_dir = Path(args.image_dir)
-json_dir = Path(args.json_dir)
+image_dir = Path("data") / "dataset" / "final_patched_BTXRD"
+json_dir = Path("data") / "dataset" / "BTXRD" / "Annotations"
 
 # Dataset
 dataset_folder_path = os.path.join("data", "dataset")
