@@ -2,15 +2,10 @@ import json
 import os
 import argparse
 import shutil
-import tempfile
 
 import pandas as pd
 
-# Add parent directory to path for imports
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from train_utils import build_splits_and_loaders
+from custom_dataset_class import CustomDataset
 
 parser = argparse.ArgumentParser(
     description="Generate metadata.jsonl for HuggingFace ImageFolder dataset"
@@ -28,28 +23,22 @@ parser.add_argument(
     help="Path to xlsx file containing metadata",
 )
 parser.add_argument(
-    "--json-dir",
+    "--annotations-dir",
     type=str,
     default="./data/dataset/BTXRD/Annotations",
     help="Path to JSON annotations folder (for tumor subtype)",
+)
+parser.add_argument(
+    "--split-path",
+    type=str,
+    default="./data/dataset/splits/dataset_split_final.json",
+    help="Path to JSON file containing split indices (with 'train', 'val', 'test' keys)",
 )
 parser.add_argument(
     "--output-dir",
     type=str,
     default="./data/dataset/hf_dataset",
     help="Output directory for the HF dataset (defaults to hf_<dataset_name> in parent of image-dir)",
-)
-parser.add_argument(
-    "--test-size",
-    type=float,
-    default=0.2,
-    help="Fraction of data to use for test set (default: 0.1)",
-)
-parser.add_argument(
-    "--random-state",
-    type=int,
-    default=42,
-    help="Random seed for reproducible splits (default: 42)",
 )
 args = parser.parse_args()
 
@@ -65,7 +54,7 @@ ANATOMICAL_LOCATIONS = [
     "tibia",
     "fibula",
     "femur",
-    "hip bone",
+    "hip-bone",
     "ankle-joint",
     "knee-joint",
     "hip-joint",
@@ -94,6 +83,20 @@ normalized_to_original = {
 image_id_col = normalized_to_original.get("imageid")
 if image_id_col is None:
     raise ValueError("Expected an 'image_id' column in xlsx file")
+
+
+# Helper function to generate metadata entry for an image
+def generate_metadata_entry(image_path):
+    image_file = os.path.basename(image_path)
+    image_key = image_file.strip().lower()
+
+    # body_part = body_part_by_image.get(image_key, "unknown")
+    anatomical_location = anatomical_location_by_image.get(image_key, "unknown")
+    tumor_subtype = tumor_by_image.get(image_key, "unknown")
+    view = view_by_image.get(image_key, "unknown")
+
+    text = f"X-ray image of {tumor_subtype} in the {anatomical_location}, {view} view"
+    return {"file_name": image_file, "text": text}
 
 
 def get_one_hot_value(row, locations, normalized_to_original):
@@ -140,10 +143,10 @@ for _, row in xlsx_df.iterrows():
 
 # === Load tumor subtypes from JSON annotations ===
 tumor_by_image = {}
-for json_file in os.listdir(args.json_dir):
+for json_file in os.listdir(args.annotations_dir):
     if not json_file.endswith(".json"):
         continue
-    json_path = os.path.join(args.json_dir, json_file)
+    json_path = os.path.join(args.annotations_dir, json_file)
     with open(json_path, "r") as f:
         data = json.load(f)
     image_name = json_file.replace(".json", ".jpeg").lower()
@@ -151,9 +154,10 @@ for json_file in os.listdir(args.json_dir):
     tumor_by_image[image_name] = label
 
 
-# === Create train/test split using build_splits_and_loaders ===
-dataset_name = os.path.basename(os.path.normpath(args.image_dir))
-parent_dir = os.path.dirname(os.path.normpath(args.image_dir))
+# === Load split indices from JSON file ===
+with open(args.split_path, "r") as f:
+    split_indices = json.load(f)
+
 output_dir = args.output_dir
 
 train_dir = os.path.join(output_dir, "train")
@@ -163,78 +167,39 @@ test_dir = os.path.join(output_dir, "test")
 os.makedirs(train_dir, exist_ok=True)
 os.makedirs(test_dir, exist_ok=True)
 
-# Use a temporary directory for the split metadata
-with tempfile.TemporaryDirectory() as temp_run_dir:
-    (
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        split_indices,
-    ) = build_splits_and_loaders(
-        image_dir=args.image_dir,
-        json_dir=args.json_dir,
-        run_dir=temp_run_dir,
-        batch_size=16,
-        test_size=args.test_size,
-        random_state=args.random_state,
-        exclude_val=False,  # We only want train/test split, no validation
-    )
+base_dataset = CustomDataset(
+    image_dir=args.image_dir,
+    json_dir=args.annotations_dir,
+    transform=None,
+)
 
-    # Get the base dataset to access samples by index
-    from data.custom_dataset_class import CustomDataset
+# Process train split
+train_metadata = []
+for idx in split_indices["train"]:
+    img_path, label = base_dataset.samples[idx]
+    image_file = os.path.basename(img_path)
+    # Copy image to train directory
+    shutil.copy2(img_path, os.path.join(train_dir, image_file))
+    # Generate metadata
+    train_metadata.append(generate_metadata_entry(img_path))
 
-    base_dataset = CustomDataset(
-        image_dir=args.image_dir,
-        json_dir=args.json_dir,
-        transform=None,
-    )
+# Process test split
+test_metadata = []
+for idx in split_indices["val"]:
+    img_path, label = base_dataset.samples[idx]
+    image_file = os.path.basename(img_path)
+    # Copy image to test directory
+    shutil.copy2(img_path, os.path.join(test_dir, image_file))
+    # Generate metadata
+    test_metadata.append(generate_metadata_entry(img_path))
 
-    # Helper function to generate metadata entry for an image
-    def generate_metadata_entry(image_path):
-        image_file = os.path.basename(image_path)
-        image_key = image_file.strip().lower()
-
-        body_part = body_part_by_image.get(image_key, "unknown")
-        anatomical_location = anatomical_location_by_image.get(image_key, "unknown")
-        tumor_subtype = tumor_by_image.get(image_key, "unknown")
-        view = view_by_image.get(image_key, "unknown")
-
-        text = (
-            f"X-ray image of {tumor_subtype} in the {anatomical_location}, {view} view"
-        )
-        return {"file_name": image_file, "text": text}
-
-    # Process train split
-    train_metadata = []
-    for idx in split_indices["train"]:
-        img_path, label = base_dataset.samples[idx]
-        image_file = os.path.basename(img_path)
-        # Copy image to train directory
-        shutil.copy2(img_path, os.path.join(train_dir, image_file))
-        # Generate metadata
-        train_metadata.append(generate_metadata_entry(img_path))
-
-    # Process test split
-    test_metadata = []
-    for idx in split_indices["val"]:
-        img_path, label = base_dataset.samples[idx]
-        image_file = os.path.basename(img_path)
-        # Copy image to test directory
-        shutil.copy2(img_path, os.path.join(test_dir, image_file))
-        # Generate metadata
-        test_metadata.append(generate_metadata_entry(img_path))
-
-    for idx in split_indices["test"]:
-        img_path, label = base_dataset.samples[idx]
-        image_file = os.path.basename(img_path)
-        # Copy image to test directory
-        shutil.copy2(img_path, os.path.join(test_dir, image_file))
-        # Generate metadata
-        test_metadata.append(generate_metadata_entry(img_path))
+for idx in split_indices["test"]:
+    img_path, label = base_dataset.samples[idx]
+    image_file = os.path.basename(img_path)
+    # Copy image to test directory
+    shutil.copy2(img_path, os.path.join(test_dir, image_file))
+    # Generate metadata
+    test_metadata.append(generate_metadata_entry(img_path))
 
 # Write metadata.jsonl files
 train_metadata_path = os.path.join(train_dir, "metadata.jsonl")
@@ -252,10 +217,9 @@ split_info_path = os.path.join(output_dir, "split_info.json")
 with open(split_info_path, "w") as f:
     json.dump(
         {
-            "train": split_indices["train"].tolist(),
-            "test": split_indices["val"].tolist() + split_indices["test"].tolist(),
-            "test_size": args.test_size,
-            "random_state": args.random_state,
+            "train": split_indices["train"],
+            "test": split_indices["val"] + split_indices["test"],
+            "source_split_file": args.split_path,
         },
         f,
         indent=2,
