@@ -5,8 +5,8 @@
 #SBATCH --output=./finetune-sd-1-5-%A.out
 #SBATCH --error=./finetune-sd-1-5-%A.err
 ##SBATCH --partition=universe,asteroids
-##SBATCH --qos=master-queuesave
-#SBATCH --time=24:00:00
+#SBATCH --qos=master-queuesave
+#SBATCH --time=48:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
@@ -23,10 +23,11 @@ conda activate bone-tumour-classification
 export RESOLUTION=512
 export LORA_RANK=32
 export BATCH_SIZE=4
-export OUTPUT_DIR="sd-1-5-lora-rank-$LORA_RANK-batch-$BATCH_SIZE-resolution-$RESOLUTION"
+export DATE=$(date +%Y-%m-%d)
+export OUTPUT_DIR="sd-1-5-lora-rank-$LORA_RANK-batch-$BATCH_SIZE-resolution-$RESOLUTION-$DATE"
 export MODEL_NAME="sd-legacy/stable-diffusion-v1-5"
 export TRAIN_DIR="/vol/miltank/projects/practical_wise2526/bone-tumor-classification-gen-models/dataset/hf_dataset"
-export WANDB_NAME="sd-1.5-rank$LORA_RANK-batch$BATCH_SIZE-resolution$RESOLUTION-test-excluded"
+export WANDB_NAME="sd-1-5-rank$LORA_RANK-batch$BATCH_SIZE-resolution$RESOLUTION-$DATE"
 srun accelerate launch train_text_to_image_lora.py \
     --pretrained_model_name_or_path=$MODEL_NAME \
     --train_data_dir=$TRAIN_DIR \
@@ -35,7 +36,7 @@ srun accelerate launch train_text_to_image_lora.py \
     --rank=$LORA_RANK \
     --mixed_precision=bf16 \
     --train_batch_size=$BATCH_SIZE \
-    --max_train_steps=10000 \
+    --max_train_steps=20000 \
     --checkpointing_steps=5000 \
     --learning_rate=1e-04 \
     --lr_warmup_steps=0 \

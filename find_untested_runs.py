@@ -3,7 +3,7 @@
 Find untested WandB runs that match a given infix filter.
 
 A run is considered "untested" if it:
-1. Has state "finished" (training completed successfully)
+1. Has state "finished" or "failed"
 2. Does NOT have test metrics logged (e.g., "Macro F1", "Accuracy" in summary)
 
 Usage:
@@ -49,10 +49,10 @@ def get_untested_runs(
     """
     api = wandb.Api()
 
-    # Get all finished runs
+    # Get all finished and failed runs
     runs = api.runs(
         f"{WANDB_ENTITY}/{WANDB_PROJECT}",
-        filters={"state": "finished"},
+        filters={"$or": [{"state": "finished"}, {"state": "failed"}]},
     )
 
     untested_runs = []
@@ -81,7 +81,7 @@ def get_untested_runs(
 
     if verbose:
         print(f"\n--- Summary ---")
-        print(f"Total finished runs: {len(runs)}")
+        print(f"Total finished/failed runs: {len(runs)}")
         if infix:
             print(f"Filtered out (no match for '{infix}'): {filtered_count}")
         print(f"Already tested: {tested_count}")
@@ -124,7 +124,7 @@ def main():
         api = wandb.Api()
         runs = api.runs(
             f"{WANDB_ENTITY}/{WANDB_PROJECT}",
-            filters={"state": "finished"},
+            filters={"$or": [{"state": "finished"}, {"state": "failed"}]},
         )
         for run in runs:
             display_name = run.display_name or run.name
