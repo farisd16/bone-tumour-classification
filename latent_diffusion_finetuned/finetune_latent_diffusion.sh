@@ -26,7 +26,7 @@ export BATCH_SIZE=4
 export DATE=$(date +%Y-%m-%d)
 export OUTPUT_DIR="sd-1-5-lora-rank-$LORA_RANK-batch-$BATCH_SIZE-resolution-$RESOLUTION-$DATE"
 export MODEL_NAME="sd-legacy/stable-diffusion-v1-5"
-export TRAIN_DIR="/vol/miltank/projects/practical_wise2526/bone-tumor-classification-gen-models/dataset/hf_dataset"
+export TRAIN_DIR="/vol/miltank/projects/practical_wise2526/bone-tumor-classification-gen-models/bone-tumour-classification/data/dataset/hf_dataset"
 export WANDB_NAME="sd-1-5-rank$LORA_RANK-batch$BATCH_SIZE-resolution$RESOLUTION-$DATE"
 srun accelerate launch train_text_to_image_lora.py \
     --pretrained_model_name_or_path=$MODEL_NAME \
