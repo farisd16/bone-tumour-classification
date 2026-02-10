@@ -7,13 +7,13 @@ metric:
   goal: maximize
 parameters:
   architecture:
-    values: [resnet34, resnet50]
+    values: [resnet34, resnet50, densenet121]
   run_name_prefix:
     value: resnet_diffusion_r64_b8
   learning_rate:
     distribution: log_uniform_values
-    min: 1.0e-5
-    max: 3.0e-4
+    min: 1.0e-6
+    max: 1.0e-3
   weight_decay:
     values: [0.0, 1.0e-5, 1.0e-4]
   batch_size:
@@ -26,12 +26,10 @@ parameters:
     max: 0.6
   loss_fn:
     values: ["ce", "wce"]
-  apply_minority_aug:
-    values: [false]
   early_stop:
     values: [true]
   early_stop_patience:
-    value: 15
+    value: 10
   scheduler_factor:
     value: 0.5
   scheduler_patience:

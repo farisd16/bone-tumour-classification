@@ -26,7 +26,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "dropout": 0.4007249403009643,
     "loss_fn": "wce",
     "focal_gamma": 2.924897740591147,
-    "apply_minority_aug": True,
+    "apply_minority_aug": False,
     "early_stop": False,
     "early_stop_patience": 10,
     "early_stop_min_delta": 0.0,
@@ -206,7 +206,7 @@ def parse_cli_args() -> argparse.Namespace:
         "--architecture",
         type=str,
         default=DEFAULT_CONFIG["architecture"],
-        choices=["resnet34", "resnet50"],
+        choices=["resnet34", "resnet50", "densenet121"],
         help="Backbone architecture to finetune",
     )
     parser.add_argument(
@@ -324,15 +324,28 @@ def train(config: Optional[Dict[str, Any]] = None) -> float:
             if architecture == "resnet34":
                 model = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
                 num_features = 512
+                model.fc = nn.Sequential(
+                    nn.Dropout(float(cfg.dropout)),
+                    nn.Linear(num_features, int(cfg.num_classes)),
+                )
             elif architecture == "resnet50":
                 model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
                 num_features = 2048
+                model.fc = nn.Sequential(
+                    nn.Dropout(float(cfg.dropout)),
+                    nn.Linear(num_features, int(cfg.num_classes)),
+                )
+            elif architecture == "densenet121":
+                model = models.densenet121(
+                    weights=models.DenseNet121_Weights.IMAGENET1K_V1
+                )
+                num_features = model.classifier.in_features
+                model.classifier = nn.Sequential(
+                    nn.Dropout(float(cfg.dropout)),
+                    nn.Linear(num_features, int(cfg.num_classes)),
+                )
             else:
                 raise ValueError(f"Unsupported architecture: {architecture}")
-            model.fc = nn.Sequential(
-                nn.Dropout(float(cfg.dropout)),
-                nn.Linear(num_features, int(cfg.num_classes)),
-            )
             model.to(device)
 
             loss_choice = cfg.loss_fn
