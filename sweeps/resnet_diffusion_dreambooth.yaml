@@ -1,0 +1,57 @@
+project: bone-tumor-classification
+entity: faris-demirovic-tum-technical-university-of-munich
+program: train.py
+method: bayes
+metric:
+  name: Accuracy/Val
+  goal: maximize
+parameters:
+  architecture:
+    values: [resnet34, resnet50, densenet121]
+  run_name_prefix:
+    value: resnet_diffusion_r32_b4
+  learning_rate:
+    distribution: log_uniform_values
+    min: 1.0e-6
+    max: 1.0e-3
+  weight_decay:
+    values: [0.0, 1.0e-5, 1.0e-4]
+  batch_size:
+    values: [8, 16, 32]
+  epochs:
+    value: 40
+  dropout:
+    distribution: uniform
+    min: 0.2
+    max: 0.6
+  loss_fn:
+    values: ["ce", "wce"]
+  early_stop:
+    values: [true]
+  early_stop_patience:
+    value: 10
+  scheduler_factor:
+    value: 0.5
+  scheduler_patience:
+    values: [2, 3, 4]
+  test_size:
+    value: 0.2
+  random_state:
+    value: 42
+  num_classes:
+    value: 7
+  trainwsyn:
+    values:
+      [
+        data/dataset/splits_dreambooth/split_step1.json,
+        data/dataset/splits_dreambooth/split_step2.json,
+        data/dataset/splits_dreambooth/split_step3.json,
+        data/dataset/splits_dreambooth/split_step4.json,
+        data/dataset/splits_dreambooth/split_step5.json,
+        data/dataset/splits_dreambooth/split_step6.json,
+        data/dataset/splits_dreambooth/split_step7.json,
+      ]
+  image_dir:
+    value: data/dataset/BTXRD_images_dreambooth
+  json_dir:
+    value: data/dataset/BTXRD/Annotations_dreambooth
