@@ -9,7 +9,7 @@ parameters:
   architecture:
     values: [resnet34, resnet50, densenet121]
   run_name_prefix:
-    value: resnet_diffusion_r32_b4
+    value: resnet_diffusion_dreambooth
   learning_rate:
     distribution: log_uniform_values
     min: 1.0e-6
