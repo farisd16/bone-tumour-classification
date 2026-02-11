@@ -20,3 +20,6 @@ latent_diffusion_finetuned/*.png
 
 latent_diffusion_finetuned/fid_evaluation_samples/
 latent_diffusion_finetuned/real_samples/
+latent_diffusion_finetuned/organized_evaluation_samples/
+
+.env

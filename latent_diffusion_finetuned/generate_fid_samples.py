@@ -3,7 +3,7 @@
 import os
 import random
 from pathlib import Path
-
+import argparse
 from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler
 from tqdm import trange
 import torch
@@ -12,18 +12,17 @@ import torch
 # Configuration
 # -------------------------
 # Number of images to generate
-N_SAMPLES = 1000
+DEFAULT_N_SAMPLES = 50000
 
-
-# Where to save the generated images
-OUTPUT_DIR = (
+DEFAULT_OUTPUT_DIR = (
     "/vol/miltank/users/carre/"
-    "bone-tumour-classification/latent_diffusion_finetuned/fid_evaluation_samples/fid_1000_samples_0_7"
+    "bone-tumour-classification/latent_diffusion_finetuned/fid_evaluation_samples/"
+    "fid_50000_samples_lora_1"
 )
 
-# Diffusion + LoRA config (adapt paths if needed)
-MODEL_BASE = "sd-legacy/stable-diffusion-v1-5"
-LORA_MODEL_PATH = (
+DEFAULT_MODEL_BASE = "sd-legacy/stable-diffusion-v1-5"
+
+DEFAULT_LORA_MODEL_PATH = (
     "/vol/miltank/users/carre/bone-tumour-classification/"
     "latent_diffusion_finetuned/lora_weights/"
     "sd-1-5-lora-rank-32-batch-4-resolution-512/checkpoint-5000"
@@ -31,9 +30,10 @@ LORA_MODEL_PATH = (
 
 
 
+
 NUM_INFERENCE_STEPS = 25
 GUIDANCE_SCALE = 7.5
-LORA_SCALE = 0.7  # [0.7 to 1]
+LORA_SCALE = 1
 
 # Prompts
 TUMOR_SUBTYPES = [
@@ -66,12 +66,47 @@ ANATOMICAL_LOCATIONS = [
 
 VIEWS = ["frontal", "lateral", "oblique"]
 
+# -------------------------
+# Argument parsing
+# -------------------------
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Generate FID samples with SD + LoRA."
+    )
+    parser.add_argument(
+        "--model_base",
+        type=str,
+        default=DEFAULT_MODEL_BASE,
+        help="Base Stable Diffusion model (e.g. sd-legacy/stable-diffusion-v1-5).",
+    )
+    parser.add_argument(
+        "--lora_model_path",
+        type=str,
+        default=DEFAULT_LORA_MODEL_PATH,
+        help="Path to LoRA checkpoint directory.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Directory to save generated images.",
+    )
+    parser.add_argument(
+        "--n_samples",
+        type=int,
+        default=DEFAULT_N_SAMPLES,
+        help="Number of images to generate.",
+    )
+    return parser.parse_args()
+
+
 
 # -------------------------
 # Pipeline helpers
 # -------------------------
 
-def load_pipeline():
+def load_pipeline(MODEL_BASE: str, LORA_MODEL_PATH: str):
     """Load the Stable Diffusion pipeline with LoRA weights."""
     pipe = DiffusionPipeline.from_pretrained(MODEL_BASE, use_safetensors=True)
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
@@ -94,14 +129,19 @@ def generate_prompt():
 
 
 def main():
+    args = parse_args()
+
+    output_dir = args.output_dir
+    n_samples = args.n_samples
+
     # Create output directory
-    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     print("Loading Stable Diffusion pipeline with LoRA...")
-    pipe = load_pipeline()
+    pipe = load_pipeline(args.model_base, args.lora_model_path)
 
-    print(f"Generating {N_SAMPLES} images into: {OUTPUT_DIR}")
-    for i in trange(N_SAMPLES, desc="Generating FID samples"):
+    print(f"Generating {n_samples} images into: {output_dir}")
+    for i in trange(n_samples, desc="Generating FID samples"):
         prompt, tumor, location, view = generate_prompt()
         try:
             image = pipe(
@@ -117,7 +157,7 @@ def main():
             safe_view = view.replace(" ", "_").replace("-", "_")
             filename = f"{i:06d}_{safe_tumor}_{safe_loc}_{safe_view}.png"
 
-            image.save(os.path.join(OUTPUT_DIR, filename))
+            image.save(os.path.join(output_dir, filename))
         except Exception as e:
             print(f"Error at index {i} for prompt '{prompt}': {e}")
 

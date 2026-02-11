@@ -10,12 +10,8 @@
 #SBATCH --mem=32G
 
 REAL_DIR=/vol/miltank/users/carre/bone-tumour-classification/latent_diffusion_finetuned/real_samples/real_512
-FAKE_DIR=/vol/miltank/users/carre/bone-tumour-classification/latent_diffusion_finetuned/fid_evaluation_samples/fid_1000_samples_0_7
-ENV_NAME=bone-tumour-classification
+FAKE_DIR=/vol/miltank/users/carre/bone-tumour-classification/latent_diffusion_finetuned/fid_evaluation_samples/rep_stable_diffusion_rank_32_batch_4_v1_5_lora_1_ckp_15000
 
-cd /vol/miltank/users/carre/bone-tumour-classification
-
-ml purge
 ml python/anaconda3
 eval "$(conda shell.bash hook)"
 conda activate "$ENV_NAME"
