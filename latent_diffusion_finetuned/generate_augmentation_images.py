@@ -100,6 +100,11 @@ def parse_args():
         default=7.5,
         help="Guidance scale for generation (default: 7.5)",
     )
+    parser.add_argument(
+        "--use_sks_token",
+        action="store_true",
+        help="If set, use 'sks' token in prompts (required for DreamBooth LoRA models)",
+    )
     return parser.parse_args()
 
 
@@ -114,11 +119,20 @@ def load_pipeline(model_base, lora_model_path):
     return pipe
 
 
-def generate_prompt(tumor_subtype, anatomical_location=None, view=None):
+def generate_prompt(
+    tumor_subtype, anatomical_location=None, view=None, use_sks_token=False
+):
     """Generate the prompt string."""
     # Convert underscores back to spaces for the prompt
     tumor_subtype_display = tumor_subtype.replace("_", " ")
-    prompt = f"X-ray image of {tumor_subtype_display}"
+
+    if use_sks_token:
+        # DreamBooth style: use sks token
+        prompt = f"X-ray image of sks {tumor_subtype_display}"
+    else:
+        # Standard LoRA style
+        prompt = f"X-ray image of {tumor_subtype_display}"
+
     if anatomical_location:
         prompt += f" in the {anatomical_location}"
     if view:
@@ -187,7 +201,9 @@ def generate_images_for_subtype(pipe, args, tumor_subtype, output_dir):
                 anatomical_location = None
                 view = None
 
-            prompt = generate_prompt(tumor_subtype, anatomical_location, view)
+            prompt = generate_prompt(
+                tumor_subtype, anatomical_location, view, args.use_sks_token
+            )
 
             if i == 0 or args.use_detailed_prompt:
                 print(f"Prompt: {prompt}")
