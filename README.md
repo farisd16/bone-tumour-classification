@@ -447,3 +447,58 @@ python generate.py \
 Notes:
 - `--class` is required when training with `--cond true`; class IDs come from `dataset.json`.
 - Repeat with different `--class` values to generate each tumor class.
+
+---
+
+## 📏 Metric Evaluation for Image Generation
+
+This repo provides two complementary metrics to assess generated image quality and diversity:
+
+- **LPIPS (intra-class diversity):** `lpips_eval.py`
+- **FID (distribution distance real vs. generated):** `latent_diffusion_finetuned/evaluate_fid.sh`
+
+### 1. LPIPS evaluation (`lpips_eval.py`)
+
+Run from project root:
+
+```bash
+python lpips_eval.py \
+  --real_root data/dataset/final_patched_BTXRD \
+  --gen_root <GENERATED_ROOT> \
+  --pairs 10000 \
+  --img_size 256 \
+  --backbone alex
+```
+
+Arguments:
+- `--real_root` (required): Root directory with real class subfolders.
+- `--gen_root` (required): Root directory with generated class subfolders.
+- `--classes` (optional): Explicit class list. If omitted, all classes under `real_root` are used.
+- `--pairs` (int, default: `10000`): Number of random image pairs per class.
+- `--img_size` (int, default: `256`): Resize target for LPIPS input.
+- `--backbone` (choice: `alex|vgg|squeeze`, default: `alex`): LPIPS backbone.
+- `--device` (default: auto): Device for evaluation (`cuda` if available, else `cpu`).
+- `--seed` (int, default: `0`): Random seed for pair sampling.
+
+Output:
+- Per-class LPIPS mean/std for real and generated sets.
+- Macro average across classes.
+
+### 2. FID evaluation (`latent_diffusion_finetuned/evaluate_fid.sh`)
+
+The SLURM script computes FID with `pytorch-fid`:
+
+```bash
+sbatch latent_diffusion_finetuned/evaluate_fid.sh
+```
+
+Before running, edit these variables in `latent_diffusion_finetuned/evaluate_fid.sh`:
+- `REAL_DIR`: Flattened folder of real images.
+- `FAKE_DIR`: Flattened folder of generated images to evaluate.
+- `ENV_NAME`: Conda environment containing `pytorch-fid`.
+
+If `pytorch-fid` is missing in your environment:
+
+```bash
+pip install pytorch-fid
+```
