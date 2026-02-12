@@ -44,7 +44,7 @@ parser.add_argument(
     "--architecture",
     type=str,
     default="resnet34",
-    choices=["resnet34", "resnet50"],
+    choices=["resnet34", "resnet50", "densenet121"],
     help="Backbone architecture used during training",
 )
 args = parser.parse_args()
@@ -84,15 +84,26 @@ test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 if args.architecture == "resnet34":
     model = models.resnet34(weights=None)
     num_features = 512
+    model.fc = nn.Sequential(
+        nn.Dropout(0.5),
+        nn.Linear(num_features, 7),
+    )
 elif args.architecture == "resnet50":
     model = models.resnet50(weights=None)
     num_features = 2048
+    model.fc = nn.Sequential(
+        nn.Dropout(0.5),
+        nn.Linear(num_features, 7),
+    )
+elif args.architecture == "densenet121":
+    model = models.densenet121(weights=None)
+    num_features = model.classifier.in_features
+    model.classifier = nn.Sequential(
+        nn.Dropout(0.5),
+        nn.Linear(num_features, 7),
+    )
 else:
     raise ValueError(f"Unsupported architecture: {args.architecture}")
-model.fc = nn.Sequential(
-    nn.Dropout(0.5),
-    nn.Linear(num_features, 7),
-)
 # Safe checkpoint load to avoid pickle execution warning
 try:
     state_dict = torch.load(best_model_path, map_location=device, weights_only=True)
