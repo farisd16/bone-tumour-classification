@@ -71,50 +71,118 @@ pip install -r requirements.txt
 
 1. Extract patches from annotations
 
-```
-python data/btxrd_bounding_box_dataset_extractor.py
+```bash
+python data/btxrd_bounding_box_dataset_extractor.py [--use-entire-dataset]
 ```
 
-This creates `data/dataset/final_patched_BTXRD/` from `BTXRD/images` + `BTXRD/Annotations`.
+Arguments:
+- `--use-entire-dataset`: Disables class filtering. It also patches samples outside the 7 target classes and writes them to `data/dataset/entire_final_patched_BTXRD/`. Without this flag, only the 7 target classes are processed and saved to `data/dataset/final_patched_BTXRD/`.
 
-2. Train (with optional early stopping)
-
+Example:
+```bash
+python data/btxrd_bounding_box_dataset_extractor.py --use-entire-dataset
 ```
-python src/training_ResNet.py --model resnet50 --early-stop --patience 10 --min-delta 0.001
+
+This creates `data/dataset/final_patched_BTXRD/` (or `entire_final_patched_BTXRD/`) from `BTXRD/images` + `BTXRD/Annotations`.
+
+2. Train classification model
+
+```bash
+python train.py [arguments]
+```
+
+Arguments:
+- `--learning-rate` (`--learning_rate`, float, default `9.502991994821847e-05`)
+- `--weight-decay` (`--weight_decay`, float, default `1e-05`)
+- `--batch-size` (`--batch_size`, int, default `32`)
+- `--epochs` (int, default `30`)
+- `--dropout` (float, default `0.3498137514984224`)
+- `--scheduler-factor` (`--scheduler_factor`, float, default `0.5`)
+- `--scheduler-patience` (`--scheduler_patience`, int, default `4`)
+- `--test-size` (`--test_size`, float, default `0.2`)
+- `--random-state` (`--random_state`, int, default `42`)
+- `--loss-fn` (`--loss_fn`, choices: `ce|wce|focal|wfocal`, default `wce`)
+- `--focal-gamma` (`--focal_gamma`, float, default `2.924897740591147`)
+- `--apply-minority-aug` (`--apply_minority_aug`, bool, default `False`)
+- `--early-stop` (`--early_stop`, bool, default `False`)
+- `--early-stop-patience` (`--early_stop_patience`, int, default `5`)
+- `--early-stop-min-delta` (`--early_stop_min_delta`, float, default `0.0`)
+- `--run-name-prefix` (`--run_name_prefix`, str, default `resnet_gan_15800`)
+- `--num-classes` (`--num_classes`, int, default `7`)
+- `--architecture` (choices: `resnet34|resnet50|densenet121`, default `resnet34`)
+- `--trainwsyn` (str path to split JSON, default `None`)
+- `--image-dir` (`--image_dir`, str, default `data/dataset/final_patched_BTXRD`)
+- `--json-dir` (`--json_dir`, str, default `data/dataset/BTXRD/Annotations`)
+
+Example:
+```bash
+python train.py --architecture resnet50 --loss-fn wce --early-stop true --early-stop-patience 10 --early-stop-min-delta 0.001 --batch-size 32 --epochs 50
 ```
 
 Notes:
+- Labels are read directly from annotation JSON files.
+- Checkpoints are saved under `checkpoints/<run_name>/`.
 
-- The training pipeline reads labels directly from JSON annotations and splits in-memory.
-- By default it uses `data/dataset/patched_BTXRD_merged/` if present, otherwise falls back to `patched_BTXRD/`.
-- Checkpoints are written under `checkpoints/<model>/`.
+3. Test trained model
 
-3. Test and generate confusion matrix
-
-```
-python src/testing_ResNet.py --model resnet50
+```bash
+python test.py --run-name <RUN_NAME> [--architecture resnet34|resnet50|densenet121]
 ```
 
-Outputs:
+Arguments:
+- `--run-name` (required): Run/checkpoint folder name under `checkpoints/` and matching W&B display name.
+- `--architecture` (optional): Backbone used during training. Default is `resnet34`.
 
-- `checkpoints/<model>/test_predictions.npy`
-- `checkpoints/<model>/confusion_matrix.png`
-
-4. (Optional) Quick visualization of predictions
-
-```
-python src/plot_predictions.py
+Example:
+```bash
+python test.py --run-name resnet_gan_15800_wce_noaug_2026-02-12_14-30-00 --architecture resnet50
 ```
 
 ---
 
 ### ▶️ How to Run SupCon Loss
 
-1. Contrastive Pretraining (run train_supcon.py)
+1. Contrastive pretraining
 
-2. Linear Classifier Training (run train_linear.py)
+```bash
+python supcon/train_supcon.py
+```
 
-3. Evaluation (run eval_supcon.py)
+Arguments:
+- No CLI arguments are currently implemented in `supcon/train_supcon.py`.
+
+Example:
+```bash
+python supcon/train_supcon.py
+```
+
+2. Linear classifier training
+
+```bash
+python supcon/train_linear.py
+```
+
+Arguments:
+- No CLI arguments are currently implemented in `supcon/train_linear.py`.
+
+Example:
+```bash
+python supcon/train_linear.py
+```
+
+3. Evaluation
+
+```bash
+python supcon/eval_supcon.py
+```
+
+Arguments:
+- No CLI arguments are currently implemented in `supcon/eval_supcon.py`.
+
+Example:
+```bash
+python supcon/eval_supcon.py
+```
 
 Outputs:
 
@@ -123,9 +191,10 @@ Outputs:
 
 ### ℹ️ Notes
 
-- CSVs like `dataset_singlelabel.csv` are not required for training/testing in this pipeline; labels are taken from annotation JSONs. If needed for analysis, you can generate a CSV aligned to the patched images via:
+- CSVs like `dataset_singlelabel.csv` are not required for training/testing in this pipeline; labels are taken from annotation JSONs.
+- If needed for analysis, you can generate a CSV aligned to patched images via:
 
-```
+```bash
 python data/create_csv_patched.py
 ```
 
@@ -205,6 +274,21 @@ stylegan2-ada-pytorch/
 ### 2. Preprocess and create class-sorted 256x256 dataset
 
 ```bash
+python data/style_gan_preprocessing.py [arguments]
+```
+
+Arguments:
+- `--image-dir` (path, default: `data/dataset/final_patched_BTXRD`): Input image directory.
+- `--json-dir` (path, default: `data/dataset/BTXRD/Annotations`): JSON annotation directory.
+- `--output-dir` (path, default: `data/dataset/BTXRD_resized_sorted_with_anatomical_location`): Output directory.
+- `--target-size` (int, default: `256`): Output square size.
+- `--center-crop` (flag): Center-crop to square before resize.
+- `--no-dataset-json` (flag): Skip writing `dataset.json`.
+- `--use-anatomical-location` (flag): Prefix class label with anatomical location (`upper limb`, `lower limb`, `pelvis`) to create 21 classes.
+- `--xlsx-path` (path, default: `data/dataset/BTXRD/dataset.xlsx`): Metadata file used with `--use-anatomical-location`.
+
+Example:
+```bash
 python data/style_gan_preprocessing.py \
   --image-dir data/dataset/final_patched_BTXRD \
   --json-dir data/dataset/BTXRD/Annotations \
@@ -212,8 +296,7 @@ python data/style_gan_preprocessing.py \
   --target-size 256
 ```
 
-Optional (21 Klassen statt 7): Anatomische Region als Präfix im Label nutzen
-(`upper limb`, `lower limb`, `pelvis`), basierend auf `dataset.xlsx`:
+Example (21 classes with anatomical prefix):
 
 ```bash
 python data/style_gan_preprocessing.py \
@@ -227,6 +310,16 @@ python data/style_gan_preprocessing.py \
 ### 3. Build index-to-filename map from original patched dataset
 
 ```bash
+python data/build_final_patched_index_map.py [arguments]
+```
+
+Arguments:
+- `--split-path` (path, default: `data/dataset/dataset_split.json`): Split JSON containing `train` and `test` indices.
+- `--dataset-dir` (path, default: `data/dataset/final_patched_BTXRD`): Directory with `.jpeg` files in the original ordering.
+- `--output-path` (path, default: `data/dataset/final_patched_index_map.json`): Output index-to-filename map.
+
+Example:
+```bash
 python data/build_final_patched_index_map.py \
   --split-path data/dataset/dataset_split.json \
   --dataset-dir data/dataset/final_patched_BTXRD \
@@ -239,16 +332,40 @@ It creates `index -> IMGxxxx.jpeg` mapping using the original `final_patched_BTX
 ### 4. Keep only train split in the resized dataset
 
 ```bash
+python data/correct_split_new.py [arguments]
+```
+
+Arguments:
+- `--split-path` (path, default: `data/dataset/dataset_split.json`): Split JSON (uses only `train` indices).
+- `--dataset-dir` (path, default: `data/dataset/BTXRD_resized_sorted`): Resized class-sorted dataset directory.
+- `--index-map` (path, default: `data/dataset/final_patched_index_map.json`): Index-to-filename mapping JSON.
+- `--dry-run` (flag): Preview removals without deleting files or rewriting `dataset.json`.
+
+Example:
+```bash
 python data/correct_split_new.py \
   --split-path data/dataset/dataset_split.json \
   --dataset-dir data/dataset/BTXRD_resized_sorted \
-  --index-map data/dataset/final_patched_index_map.json
+  --index-map data/dataset/final_patched_index_map.json \
+  --dry-run
 ```
-
-Use `--dry-run` first if you want to preview deletions.
 
 ### 5. Pack dataset for StyleGAN2-ADA
 
+```bash
+python data/dataset_tool.py [arguments]
+```
+
+Arguments:
+- `--source` (required, path): Input dataset path (folder or archive).
+- `--dest` (required, path): Output dataset path (folder or archive, e.g. `.zip`).
+- `--max-images` (int, optional): Limit number of images.
+- `--resize-filter` (choice: `box|lanczos`, default: `lanczos`): Resize interpolation filter.
+- `--transform` (choice: `center-crop|center-crop-wide`, optional): Crop/resize mode.
+- `--width` (int, optional): Output width.
+- `--height` (int, optional): Output height.
+
+Example:
 ```bash
 python data/dataset_tool.py \
   --source data/dataset/BTXRD_resized_sorted \
@@ -259,12 +376,44 @@ python data/dataset_tool.py \
 ### 6. Train StyleGAN2-ADA
 
 ```bash
+python train.py [arguments]
+```
+
+Arguments:
+- `--outdir` (required): Output directory for training runs.
+- `--data` (required): Training dataset path (directory or zip).
+- `--gpus` (int, default: `1`): Number of GPUs (power of two).
+- `--snap` (int, default: `50`): Snapshot interval in ticks.
+- `--metrics` (default: `fid50k_full`): Comma-separated metric list or `none`.
+- `--seed` (int, default: `0`): Random seed.
+- `-n`, `--dry-run` (flag): Print config and exit without training.
+- `--cond` (bool, default: `false`): Enable conditional training from labels in `dataset.json`.
+- `--subset` (int, optional): Train on only N images.
+- `--mirror` (bool, default: `false`): Enable horizontal flips.
+- `--cfg` (choice: `auto|stylegan2|paper256|paper512|paper1024|cifar`, default: `auto`): Base configuration.
+- `--gamma` (float, optional): Override R1 gamma.
+- `--kimg` (int, optional): Override training duration.
+- `--batch` (int, optional): Override batch size.
+- `--aug` (choice: `noaug|ada|fixed`, default: `ada`): Augmentation mode.
+- `--p` (float, optional): Augmentation probability, only for `--aug=fixed`.
+- `--target` (float, optional): ADA target, only for `--aug=ada`.
+- `--augpipe` (choice: `blit|geom|color|filter|noise|cutout|bg|bgc|bgcf|bgcfn|bgcfnc`, default: `bgc`): Augmentation pipeline.
+- `--resume` (default: `noresume`): Resume from pickle or predefined source.
+- `--freezed` (int, default: `0`): Number of frozen discriminator layers.
+- `--fp32` (bool, default: `false`): Disable mixed precision.
+- `--nhwc` (bool, default: `false`): Use NHWC layout with FP16.
+- `--nobench` (bool, default: `false`): Disable cuDNN benchmarking.
+- `--allow-tf32` (bool, default: `false`): Allow TF32 in PyTorch ops.
+- `--workers` (int, default: `3`): DataLoader worker count.
+
+Example:
+```bash
 python train.py \
   --outdir training-runs \
   --data data/btxrd_corrected_dataset.zip \
   --gpus 1 \
   --cfg auto \
-  --cond 1 \
+  --cond true \
   --snap 10
 ```
 
@@ -272,6 +421,20 @@ python train.py \
 
 After training, pick a snapshot from `training-runs/.../network-snapshot-xxxxxx.pkl` and sample images:
 
+```bash
+python generate.py [arguments]
+```
+
+Arguments:
+- `--network` (required): Network pickle path (`.pkl`) or URL.
+- `--outdir` (required): Output image directory.
+- `--seeds` (required unless `--projected-w` is used): Comma list or range, e.g. `0,1,2` or `0-199`.
+- `--trunc` (float, default: `1.0`): Truncation psi.
+- `--class` (int, optional): Class ID for conditional models.
+- `--noise-mode` (choice: `const|random|none`, default: `const`): Noise handling.
+- `--projected-w` (file, optional): Generate from projected latent `W` instead of seeds.
+
+Example:
 ```bash
 python generate.py \
   --outdir out/btxrd_samples \
@@ -282,5 +445,5 @@ python generate.py \
 ```
 
 Notes:
-- `--class` is required when training with `--cond 1`; class IDs come from the dataset `dataset.json`.
+- `--class` is required when training with `--cond true`; class IDs come from `dataset.json`.
 - Repeat with different `--class` values to generate each tumor class.
