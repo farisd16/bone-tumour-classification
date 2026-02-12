@@ -16,7 +16,7 @@ ml python/anaconda3
 eval "$(conda shell.bash hook)"
 conda deactivate
 # If the following does not work, try 'source activate <env-name>'
-conda activate ADLM
+conda activate /meta/users/cahu/my_env
 # Run the program
 # Usage: sbatch train.sh <synthetic_split> <run_name_prefix>
 # Example: sbatch train.sh data/dataset/split_step1.json resnet_diffusion-synthetic

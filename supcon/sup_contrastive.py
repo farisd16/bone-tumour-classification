@@ -1,3 +1,22 @@
+"""
+Supervised Contrastive Learning Components.
+
+This module contains:
+
+1. SupConLoss:
+   Implementation of the Supervised Contrastive Loss introduced in
+   "Supervised Contrastive Learning" (Khosla et al., 2020).
+
+2. TwoViewDataset:
+   A dataset wrapper that generates two independently augmented views
+   of the same image, required for contrastive learning.
+
+3. SupConModel:
+   A model consisting of an encoder backbone and an MLP projection head,
+   used for supervised contrastive representation learning.
+"""
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

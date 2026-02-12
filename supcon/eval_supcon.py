@@ -1,3 +1,11 @@
+"""
+Evaluation Script for SupCon Encoder with Linear Classifier.
+
+This script evaluates a pretrained Supervised Contrastive (SupCon) encoder
+combined with a trained linear classifier on the BTXRD dataset test split.
+"""
+
+
 import os
 import json
 from pathlib import Path

@@ -1,3 +1,35 @@
+"""
+SupCon + Linear Evaluation Pipeline (Training Script)
+
+This script implements a two-stage training pipeline for image classification:
+
+1) Supervised Contrastive (SupCon) pretraining:
+   - Trains an encoder backbone with a projection head using supervised
+     contrastive loss (Khosla et al., 2020).
+   - Requires two augmented views per image and uses label information
+     to define positive pairs.
+
+2) Linear evaluation / probing:
+   - Freezes the pretrained encoder.
+   - Trains a linear classifier head on top of the frozen features.
+   - Evaluates on validation and test splits.
+
+Additional features:
+- Stratified train/val/test splits.
+- Optional minority-class-specific augmentations during training.
+- Logging of training and evaluation metrics to Weights & Biases (W&B).
+- Saving checkpoints and split information, and logging them as W&B artifacts.
+
+Expected directory structure (relative):
+- data/dataset/final_patched_BTXRD
+- data/dataset/BTXRD/Annotations
+
+Outputs:
+- checkpoints_supcon/<run_name>/encoder_supcon.pth
+- checkpoints_supcon/<run_name>/classifier.pth
+- checkpoints_supcon/<run_name>/split.json
+"""
+
 import argparse
 import datetime
 import json
