@@ -180,4 +180,107 @@ python -m latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run-name <
 
 ## 🆕 2.Synthetic Generation (Stylegan2)
 
-Philipp
+Run the following from `stylegan2-ada-pytorch/` (not from this repo root).
+
+### 1. Move data into StyleGAN repo
+
+Place these folders under `stylegan2-ada-pytorch/data/dataset/`:
+
+- `BTXRD/` (must contain `Annotations/`)
+- `final_patched_BTXRD/` (patched images)
+- `dataset_split.json` (or adapt `--split-path` below)
+
+Expected layout:
+
+```text
+stylegan2-ada-pytorch/
+  data/
+    dataset/
+      BTXRD/
+        Annotations/
+      final_patched_BTXRD/
+      dataset_split.json
+```
+
+### 2. Preprocess and create class-sorted 256x256 dataset
+
+```bash
+python data/style_gan_preprocessing.py \
+  --image-dir data/dataset/final_patched_BTXRD \
+  --json-dir data/dataset/BTXRD/Annotations \
+  --output-dir data/dataset/BTXRD_resized_sorted \
+  --target-size 256
+```
+
+Optional (21 Klassen statt 7): Anatomische Region als Präfix im Label nutzen
+(`upper limb`, `lower limb`, `pelvis`), basierend auf `dataset.xlsx`:
+
+```bash
+python data/style_gan_preprocessing.py \
+  --image-dir data/dataset/final_patched_BTXRD \
+  --json-dir data/dataset/BTXRD/Annotations \
+  --output-dir data/dataset/BTXRD_resized_sorted_with_anatomical_location \
+  --target-size 256 \
+  --use-anatomical-location
+```
+
+### 3. Build index-to-filename map from original patched dataset
+
+```bash
+python data/build_final_patched_index_map.py \
+  --split-path data/dataset/dataset_split.json \
+  --dataset-dir data/dataset/final_patched_BTXRD \
+  --output-path data/dataset/final_patched_index_map.json
+```
+
+`build_final_patched_index_map.py` is needed because split files contain integer indices, not filenames.  
+It creates `index -> IMGxxxx.jpeg` mapping using the original `final_patched_BTXRD` ordering so split indices can be matched to resized/sorted files.
+
+### 4. Keep only train split in the resized dataset
+
+```bash
+python data/correct_split_new.py \
+  --split-path data/dataset/dataset_split.json \
+  --dataset-dir data/dataset/BTXRD_resized_sorted \
+  --index-map data/dataset/final_patched_index_map.json
+```
+
+Use `--dry-run` first if you want to preview deletions.
+
+### 5. Pack dataset for StyleGAN2-ADA
+
+```bash
+python data/dataset_tool.py \
+  --source data/dataset/BTXRD_resized_sorted \
+  --dest data/btxrd_corrected_dataset.zip \
+  --width 256 --height 256 --resize-filter box
+```
+
+### 6. Train StyleGAN2-ADA
+
+```bash
+python train.py \
+  --outdir training-runs \
+  --data data/btxrd_corrected_dataset.zip \
+  --gpus 1 \
+  --cfg auto \
+  --cond 1 \
+  --snap 10
+```
+
+### 7. Generate synthetic images
+
+After training, pick a snapshot from `training-runs/.../network-snapshot-xxxxxx.pkl` and sample images:
+
+```bash
+python generate.py \
+  --outdir out/btxrd_samples \
+  --trunc 0.7 \
+  --seeds 0-199 \
+  --class 0 \
+  --network training-runs/<RUN_DIR>/network-snapshot-020000.pkl
+```
+
+Notes:
+- `--class` is required when training with `--cond 1`; class IDs come from the dataset `dataset.json`.
+- Repeat with different `--class` values to generate each tumor class.

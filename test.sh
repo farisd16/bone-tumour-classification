@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=test
-#SBATCH --output=./test-%A.out
-#SBATCH --error=./test-%A.err
+#SBATCH --output=.logs/test-%A.out
+#SBATCH --error=.logs/test-%A.err
 ##SBATCH --partition=universe,asteroids
 ##SBATCH --qos=master-queuesave
 #SBATCH --time=24:00:00
@@ -16,7 +16,7 @@ ml python/anaconda3
 eval "$(conda shell.bash hook)"
 conda deactivate
 # If the following does not work, try 'source activate <env-name>'
-conda activate bone-tumour-classification
+conda activate ADLM
 # Run the program
 # Usage: sbatch test.sh <run_name>
 # Example: sbatch test.sh resnet_diffusion-synthetic_split_step1_wce_aug_2026-01-22_15-59-59

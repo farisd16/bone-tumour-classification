@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=train
-#SBATCH --output=./train-%A.out
-#SBATCH --error=./train-%A.err
+#SBATCH --output=./logs/train-%A.out
+#SBATCH --error=./logs/train-%A.err
 ##SBATCH --partition=universe,asteroids
 ##SBATCH --qos=master-queuesave
 #SBATCH --time=24:00:00
@@ -16,7 +16,7 @@ ml python/anaconda3
 eval "$(conda shell.bash hook)"
 conda deactivate
 # If the following does not work, try 'source activate <env-name>'
-conda activate bone-tumour-classification
+conda activate ADLM
 # Run the program
 # Usage: sbatch train.sh <synthetic_split> <run_name_prefix>
 # Example: sbatch train.sh data/dataset/split_step1.json resnet_diffusion-synthetic

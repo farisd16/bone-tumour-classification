@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=fid-pytorch
-#SBATCH --output=fid-pytorch-%j.out
-#SBATCH --error=fid-pytorch-%j.err
+#SBATCH --output=fid-pytorch-bootstrap-%j.out
+#SBATCH --error=fid-pytorch-bootstrap-%j.err
 #SBATCH --partition=asteroids
 #SBATCH --qos=master-queuesave
 #SBATCH --time=04:00:00
@@ -9,11 +9,16 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 
-REAL_DIR=/vol/miltank/users/carre/bone-tumour-classification/latent_diffusion_finetuned/real_samples/real_512
-FAKE_DIR=/vol/miltank/users/carre/bone-tumour-classification/latent_diffusion_finetuned/fid_evaluation_samples/fid_1000_samples_0_7
-ENV_NAME=bone-tumour-classification
+REAL_DIR=/vol/miltank/users/wiep/Documents/tmp/fid_real_flat
+FAKE_DIR=/vol/miltank/users/wiep/Documents/tmp/fid_fake_flat_020000
+ENV_NAME=ADLM
 
-cd /vol/miltank/users/carre/bone-tumour-classification
+FAKE_SUFFIX="${FAKE_DIR##*_}"
+OUT_FILE="fid-pytorch-${FAKE_SUFFIX}.out"
+ERR_FILE="fid-pytorch-${FAKE_SUFFIX}.err"
+exec > >(tee -a "$OUT_FILE") 2> >(tee -a "$ERR_FILE" >&2)
+
+cd /vol/miltank/users/wiep/Documents
 
 ml purge
 ml python/anaconda3

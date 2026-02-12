@@ -50,13 +50,23 @@ def main() -> None:
     if args.dry_run:
         return
 
+    failed_runs = []
+
     for name in run_names:
         cmd = [sys.executable, "test.py", "--run-name", name]
         print(f"\n=== Running test.py for {name} ===")
         result = subprocess.run(cmd, cwd=root)
         if result.returncode != 0:
-            print(f"test.py failed for {name} (exit code {result.returncode}); stopping.")
-            sys.exit(result.returncode)
+            print(f"test.py failed for {name} (exit code {result.returncode}); continuing.")
+            failed_runs.append(name)
+
+    if failed_runs:
+        print("\nRuns with failed tests:")
+        for name in failed_runs:
+            print(f"  - {name}")
+        sys.exit(1)
+    else:
+        print("\nAll tests completed successfully.")
 
 
 if __name__ == "__main__":
