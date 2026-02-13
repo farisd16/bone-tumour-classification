@@ -124,7 +124,7 @@ def main():
         api = wandb.Api()
         runs = api.runs(
             f"{WANDB_ENTITY}/{WANDB_PROJECT}",
-            filters={"$or": [{"state": "finished"}, {"state": "failed"}]},
+            filters={"$or": [{"state": "finished"}]},
         )
         for run in runs:
             display_name = run.display_name or run.name
