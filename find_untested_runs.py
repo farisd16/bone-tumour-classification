@@ -16,12 +16,18 @@ Examples:
 """
 
 import argparse
+import os
 import sys
 from typing import List, Optional
 
 import wandb
 
 from config import WANDB_ENTITY, WANDB_PROJECT
+
+# Path to checkpoints directory
+CHECKPOINTS_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "checkpoints"
+)
 
 
 # Keys that indicate a run has been tested
@@ -58,6 +64,7 @@ def get_untested_runs(
     untested_runs = []
     tested_count = 0
     filtered_count = 0
+    no_split_count = 0
 
     for run in runs:
         display_name = run.display_name or run.name
@@ -65,6 +72,15 @@ def get_untested_runs(
         # Filter by infix if provided
         if infix and infix not in display_name:
             filtered_count += 1
+            continue
+
+        # Check if checkpoint folder has data_split.json
+        checkpoint_dir = os.path.join(CHECKPOINTS_DIR, display_name)
+        split_file = os.path.join(checkpoint_dir, "data_split.json")
+        if not os.path.exists(split_file):
+            no_split_count += 1
+            if verbose:
+                print(f"[NO SPLIT] {display_name}")
             continue
 
         # Check if run has been tested
@@ -84,6 +100,7 @@ def get_untested_runs(
         print(f"Total finished/failed runs: {len(runs)}")
         if infix:
             print(f"Filtered out (no match for '{infix}'): {filtered_count}")
+        print(f"Skipped (no data_split.json): {no_split_count}")
         print(f"Already tested: {tested_count}")
         print(f"Untested: {len(untested_runs)}")
 
