@@ -10,8 +10,7 @@ checkpoints_linear
 checkpoints_supcon
 runs
 logs
-generated_images_15800/
-generated_images/
+generated_images*/
 
 latent_diffusion_finetuned/lora_weights
 latent_diffusion_finetuned/generated_images/
