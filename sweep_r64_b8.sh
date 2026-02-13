@@ -2,6 +2,7 @@
 #SBATCH --job-name=sweep-r64-b8
 #SBATCH --output=./sweep-r64-b8-%A.out
 #SBATCH --error=./sweep-r64-b8-%A.err
+#SBATCH --qos=master-queuesave
 #SBATCH --time=48:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
