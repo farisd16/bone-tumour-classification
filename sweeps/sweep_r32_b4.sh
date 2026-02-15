@@ -1,7 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=sweep-r64-b8
-#SBATCH --output=./logs/resnet34-%A.out
-#SBATCH --error=./logs/resnet34-%A.err
+#SBATCH --job-name=sweep-r32-b4
+#SBATCH --output=./sweep-r32-b4-%A.out
+#SBATCH --error=./sweep-r32-b4-%A.err
+#SBATCH --qos=master-queuesave
 #SBATCH --time=48:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
@@ -13,12 +14,13 @@ ml python/anaconda3
 # Activate corresponding environment
 eval "$(conda shell.bash hook)"
 conda deactivate
-conda activate /meta/users/cahu/my_env ########################
+conda activate bone-tumour-classification
+
 # Number of sweep runs to execute (optional)
 COUNT=${1:-}
 
 # Create the sweep and capture the sweep ID
-SWEEP_ID=$(wandb sweep sweeps/resnet34.yaml 2>&1 | grep -oP 'wandb agent \K[^ ]+')
+SWEEP_ID=$(wandb sweep resnet_diffusion_r32_b4.yaml 2>&1 | grep -oP 'wandb agent \K[^ ]+')
 
 if [ -z "$SWEEP_ID" ]; then
     echo "Error: Failed to create sweep or extract sweep ID"

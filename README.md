@@ -40,8 +40,8 @@ First, create and activate a virtual environment:
 **Option 1: Using Conda**
 
 ```bash
-conda create -n bone-tumour python=3.12
-conda activate bone-tumour
+conda create -n bone-tumour-classification python=3.12
+conda activate bone-tumour-classification
 ```
 
 **Option 2: Using venv**

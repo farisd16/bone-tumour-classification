@@ -20,7 +20,7 @@ conda activate bone-tumour-classification
 COUNT=${1:-}
 
 # Create the sweep and capture the sweep ID
-SWEEP_ID=$(wandb sweep sweeps/resnet_diffusion_r64_b4.yaml 2>&1 | grep -oP 'wandb agent \K[^ ]+')
+SWEEP_ID=$(wandb sweep resnet_diffusion_r64_b4.yaml 2>&1 | grep -oP 'wandb agent \K[^ ]+')
 
 if [ -z "$SWEEP_ID" ]; then
     echo "Error: Failed to create sweep or extract sweep ID"

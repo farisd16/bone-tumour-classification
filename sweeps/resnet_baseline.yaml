@@ -9,7 +9,7 @@ parameters:
   architecture:
     value: resnet34
   run_name_prefix:
-    value: resnet_short_notice
+    value: resnet_baseline
   learning_rate:
     distribution: log_uniform_values
     min: 1.0e-5
@@ -49,5 +49,4 @@ parameters:
   num_classes:
     value: 7
   trainwsyn:
-    value: data/short_notice.json
-
+    value: data/baseline_split.json
