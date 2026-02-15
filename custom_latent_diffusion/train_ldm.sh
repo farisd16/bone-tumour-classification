@@ -18,4 +18,4 @@ conda deactivate
 # If the following does not work, try 'source activate <env-name>'
 conda activate bone-tumour-classification
 # Run the program
-srun python -m latent_diffusion.diffusion.train --run-name <RUN_NAME>
+srun python -m diffusion.train --run-name <RUN_NAME>
