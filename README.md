@@ -543,7 +543,7 @@ sbatch generate_augmentation_images.sh <model_base> <lora_model_path> <num_image
 - **`num_images`**: Number of synthetic images to generate per tumor subtype.
 - **`tumor_subtype`**: Which tumor type to generate. Choices: `osteochondroma`, `osteosarcoma`, `multiple_osteochondromas`, `simple_bone_cyst`, `giant_cell_tumor`, `synovial_osteochondroma`, `osteofibroma`, or `all`.
 - **`use_detailed_prompt`** (optional): `true` or `false` (default: `false`). If `true`, randomly samples anatomical locations and views to create more varied prompts.
-- **`output_dir`** (optional): Custom output directory for generated images. This should be specified if you are using `all` as the tumor type, so that you can easily use the generated images for the classifier.
+- **`output_dir`** (optional): Custom output directory for generated images. This should be specified if you are using `all` as the tumor type, so that you can easily use the generated images for the classifier. This path is used as input for `--synthetic-images` for `json_adjuster.py`.
 
 Example:
 
