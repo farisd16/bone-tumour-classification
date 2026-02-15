@@ -30,11 +30,40 @@ We focus on classifying **seven tumor types**:
 ## 🏫 About the Project
 
 This project is part of the **Applied Deep Learning in Medicine (ADLM)** course at the  
-**Technical University of Munich (TUM)**, in collaboration with the  
-**Clinic for Orthopaedics and Sports Orthopaedics** and the  
-**Institute for AI and Informatics in Medicine**.
+**Technical University of Munich (TUM)**, organized by the
+**Chair of Artificial Intelligence in Healthcare and Medicine**.
+
+## ⬇️ Dependencies
+
+First, create and activate a virtual environment:
+
+**Option 1: Using Conda**
+
+```bash
+conda create -n bone-tumour python=3.12
+conda activate bone-tumour
+```
+
+**Option 2: Using venv**
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Linux/macOS
+# or
+venv\Scripts\activate     # On Windows
+```
+
+Then install dependencies:
+
+```
+pip install -r requirements.txt
+```
+
+---
 
 ## ⬇️ Dataset Setup
+
+You can download the BTXRD dataset [here](https://figshare.com/articles/dataset/A_Radiograph_Dataset_for_the_Classification_Localization_and_Segmentation_of_Primary_Bone_Tumors/27865398?file=50653575)
 
 Place the BTXRD dataset under the following paths relative to the project root:
 
@@ -57,14 +86,6 @@ data/
     patched_BTXRD_merged/   # Merge of the two patch sets (created)
 ```
 
-Install dependencies:
-
-```
-pip install -r requirements.txt
-```
-
----
-
 ## 📊 Classification
 
 ### ▶️ How To Run (Preparation → Training → Testing)
@@ -72,18 +93,10 @@ pip install -r requirements.txt
 1. Extract patches from annotations
 
 ```bash
-python data/btxrd_bounding_box_dataset_extractor.py [--use-entire-dataset]
+python data/btxrd_bounding_box_dataset_extractor.py
 ```
 
-Arguments:
-- `--use-entire-dataset`: Disables class filtering. It also patches samples outside the 7 target classes and writes them to `data/dataset/entire_final_patched_BTXRD/`. Without this flag, only the 7 target classes are processed and saved to `data/dataset/final_patched_BTXRD/`.
-
-Example:
-```bash
-python data/btxrd_bounding_box_dataset_extractor.py --use-entire-dataset
-```
-
-This creates `data/dataset/final_patched_BTXRD/` (or `entire_final_patched_BTXRD/`) from `BTXRD/images` + `BTXRD/Annotations`.
+This creates `data/dataset/final_patched_BTXRD/` from `BTXRD/images` + `BTXRD/Annotations`.
 
 2. Train classification model
 
@@ -92,6 +105,7 @@ python train.py [arguments]
 ```
 
 Arguments:
+
 - `--learning-rate` (`--learning_rate`, float, default `9.502991994821847e-05`)
 - `--weight-decay` (`--weight_decay`, float, default `1e-05`)
 - `--batch-size` (`--batch_size`, int, default `32`)
@@ -115,11 +129,13 @@ Arguments:
 - `--json-dir` (`--json_dir`, str, default `data/dataset/BTXRD/Annotations`)
 
 Example:
+
 ```bash
 python train.py --architecture resnet50 --loss-fn wce --early-stop true --early-stop-patience 10 --early-stop-min-delta 0.001 --batch-size 32 --epochs 50
 ```
 
 Notes:
+
 - Labels are read directly from annotation JSON files.
 - Checkpoints are saved under `checkpoints/<run_name>/`.
 
@@ -130,10 +146,12 @@ python test.py --run-name <RUN_NAME> [--architecture resnet34|resnet50|densenet1
 ```
 
 Arguments:
+
 - `--run-name` (required): Run/checkpoint folder name under `checkpoints/` and matching W&B display name.
 - `--architecture` (optional): Backbone used during training. Default is `resnet34`.
 
 Example:
+
 ```bash
 python test.py --run-name resnet_gan_15800_wce_noaug_2026-02-12_14-30-00 --architecture resnet50
 ```
@@ -149,9 +167,11 @@ python supcon/train_supcon.py
 ```
 
 Arguments:
+
 - No CLI arguments are currently implemented in `supcon/train_supcon.py`.
 
 Example:
+
 ```bash
 python supcon/train_supcon.py
 ```
@@ -163,9 +183,11 @@ python supcon/train_linear.py
 ```
 
 Arguments:
+
 - No CLI arguments are currently implemented in `supcon/train_linear.py`.
 
 Example:
+
 ```bash
 python supcon/train_linear.py
 ```
@@ -177,9 +199,11 @@ python supcon/eval_supcon.py
 ```
 
 Arguments:
+
 - No CLI arguments are currently implemented in `supcon/eval_supcon.py`.
 
 Example:
+
 ```bash
 python supcon/eval_supcon.py
 ```
@@ -246,7 +270,6 @@ python -m latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run-name <
 - **`<LDM_RUN_DIR>` is the directory of the diffusion train run, for example `train_ldm_2025-12-07_17-36-29`**
 - **`<CLASS_NAME>` is the name of the tumor subtype which you wish to sample for, for example `osteochondroma`**
 
-
 ## 🆕 2.Synthetic Generation (Stylegan2)
 
 Run the following from `stylegan2-ada-pytorch/` (not from this repo root).
@@ -278,6 +301,7 @@ python data/style_gan_preprocessing.py [arguments]
 ```
 
 Arguments:
+
 - `--image-dir` (path, default: `data/dataset/final_patched_BTXRD`): Input image directory.
 - `--json-dir` (path, default: `data/dataset/BTXRD/Annotations`): JSON annotation directory.
 - `--output-dir` (path, default: `data/dataset/BTXRD_resized_sorted_with_anatomical_location`): Output directory.
@@ -288,6 +312,7 @@ Arguments:
 - `--xlsx-path` (path, default: `data/dataset/BTXRD/dataset.xlsx`): Metadata file used with `--use-anatomical-location`.
 
 Example:
+
 ```bash
 python data/style_gan_preprocessing.py \
   --image-dir data/dataset/final_patched_BTXRD \
@@ -314,11 +339,13 @@ python data/build_final_patched_index_map.py [arguments]
 ```
 
 Arguments:
+
 - `--split-path` (path, default: `data/dataset/dataset_split.json`): Split JSON containing `train` and `test` indices.
 - `--dataset-dir` (path, default: `data/dataset/final_patched_BTXRD`): Directory with `.jpeg` files in the original ordering.
 - `--output-path` (path, default: `data/dataset/final_patched_index_map.json`): Output index-to-filename map.
 
 Example:
+
 ```bash
 python data/build_final_patched_index_map.py \
   --split-path data/dataset/dataset_split.json \
@@ -336,12 +363,14 @@ python data/correct_split_new.py [arguments]
 ```
 
 Arguments:
+
 - `--split-path` (path, default: `data/dataset/dataset_split.json`): Split JSON (uses only `train` indices).
 - `--dataset-dir` (path, default: `data/dataset/BTXRD_resized_sorted`): Resized class-sorted dataset directory.
 - `--index-map` (path, default: `data/dataset/final_patched_index_map.json`): Index-to-filename mapping JSON.
 - `--dry-run` (flag): Preview removals without deleting files or rewriting `dataset.json`.
 
 Example:
+
 ```bash
 python data/correct_split_new.py \
   --split-path data/dataset/dataset_split.json \
@@ -357,6 +386,7 @@ python data/dataset_tool.py [arguments]
 ```
 
 Arguments:
+
 - `--source` (required, path): Input dataset path (folder or archive).
 - `--dest` (required, path): Output dataset path (folder or archive, e.g. `.zip`).
 - `--max-images` (int, optional): Limit number of images.
@@ -366,6 +396,7 @@ Arguments:
 - `--height` (int, optional): Output height.
 
 Example:
+
 ```bash
 python data/dataset_tool.py \
   --source data/dataset/BTXRD_resized_sorted \
@@ -380,6 +411,7 @@ python train.py [arguments]
 ```
 
 Arguments:
+
 - `--outdir` (required): Output directory for training runs.
 - `--data` (required): Training dataset path (directory or zip).
 - `--gpus` (int, default: `1`): Number of GPUs (power of two).
@@ -407,6 +439,7 @@ Arguments:
 - `--workers` (int, default: `3`): DataLoader worker count.
 
 Example:
+
 ```bash
 python train.py \
   --outdir training-runs \
@@ -426,6 +459,7 @@ python generate.py [arguments]
 ```
 
 Arguments:
+
 - `--network` (required): Network pickle path (`.pkl`) or URL.
 - `--outdir` (required): Output image directory.
 - `--seeds` (required unless `--projected-w` is used): Comma list or range, e.g. `0,1,2` or `0-199`.
@@ -435,6 +469,7 @@ Arguments:
 - `--projected-w` (file, optional): Generate from projected latent `W` instead of seeds.
 
 Example:
+
 ```bash
 python generate.py \
   --outdir out/btxrd_samples \
@@ -445,6 +480,7 @@ python generate.py \
 ```
 
 Notes:
+
 - `--class` is required when training with `--cond true`; class IDs come from `dataset.json`.
 - Repeat with different `--class` values to generate each tumor class.
 
@@ -471,6 +507,7 @@ python lpips_eval.py \
 ```
 
 Arguments:
+
 - `--real_root` (required): Root directory with real class subfolders.
 - `--gen_root` (required): Root directory with generated class subfolders.
 - `--classes` (optional): Explicit class list. If omitted, all classes under `real_root` are used.
@@ -481,6 +518,7 @@ Arguments:
 - `--seed` (int, default: `0`): Random seed for pair sampling.
 
 Output:
+
 - Per-class LPIPS mean/std for real and generated sets.
 - Macro average across classes.
 
@@ -493,12 +531,6 @@ sbatch latent_diffusion_finetuned/evaluate_fid.sh
 ```
 
 Before running, edit these variables in `latent_diffusion_finetuned/evaluate_fid.sh`:
+
 - `REAL_DIR`: Flattened folder of real images.
 - `FAKE_DIR`: Flattened folder of generated images to evaluate.
-- `ENV_NAME`: Conda environment containing `pytorch-fid`.
-
-If `pytorch-fid` is missing in your environment:
-
-```bash
-pip install pytorch-fid
-```
