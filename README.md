@@ -48,7 +48,7 @@ conda activate bone-tumour-classification
 x
 
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Linux/macOS
 # or
 venv\Scripts\activate     # On Windows
@@ -103,7 +103,7 @@ The following files were used to identify and resolve issues that occurred durin
 
 ### ▶️ How To Run (Preparation → Training → Testing)
 
-1. Extract patches from annotations
+#### 1. Extract patches from annotations
 
 ```bash
 python data/btxrd_bounding_box_dataset_extractor.py
@@ -111,7 +111,7 @@ python data/btxrd_bounding_box_dataset_extractor.py
 
 This creates `data/dataset/final_patched_BTXRD/` from `BTXRD/images` + `BTXRD/Annotations`.
 
-2. Train classification model
+#### 2. Train classification model
 
 ```bash
 python train.py [arguments]
@@ -152,7 +152,7 @@ Notes:
 - Labels are read directly from annotation JSON files.
 - Checkpoints are saved under `checkpoints/<run_name>/`.
 
-3. Test trained model
+#### 3. Test trained model
 
 ```bash
 python test.py --run-name <RUN_NAME> [--architecture resnet34|resnet50|densenet121]
@@ -173,13 +173,13 @@ python test.py --run-name resnet_gan_15800_wce_noaug_2026-02-12_14-30-00 --archi
 
 ### ▶️ How to Run SupCon Loss
 
-1. Contrastive pretraining
+#### 1. Contrastive pretraining
 
 ```bash
 python supcon/train_supcon.py
 ```
 
-2. Linear classifier training
+#### 2. Linear classifier training
 
 ```bash
 python supcon/train_linear.py \
@@ -188,7 +188,7 @@ python supcon/train_linear.py \
   --dataset-dir data/dataset
 ```
 
-3. Evaluation
+#### 3. Evaluation
 
 ```bash
 python supcon/eval_supcon.py \
@@ -211,11 +211,11 @@ Outputs:
 In addition to the separate training scripts, the repository provides a single
 pipeline script that performs:
 
-1. Supervised Contrastive (SupCon) pretraining  
-2. Linear classifier training  
-3. Validation and test evaluation  
-4. Logging to Weights & Biases (W&B)  
-5. Saving model checkpoints and split information  
+1. Supervised Contrastive (SupCon) pretraining
+2. Linear classifier training
+3. Validation and test evaluation
+4. Logging to Weights & Biases (W&B)
+5. Saving model checkpoints and split information
 
 ---
 
@@ -237,15 +237,15 @@ python supcon/<PIPELINE_SCRIPT_NAME>.py \
   --minority-classes <comma-separated-class-names>
 ```
 
-### How to train with synthetic images
+### ▶️ How to train with synthetic images
 
 #### 1. Generate splits with synthetic data
+
 `json_adjuster.py` builds a series of training splits and corresponding annotations by mixing **synthetic images** into the original dataset. It:
 
 - Copies original images and annotations into the output dataset folders.
 - Samples synthetic images per class across multiple steps (see `STEPS` in the script).
-- Renames synthetic images to the canonical `IMG000000.ext` format.
-- Creates minimal JSON annotations for each synthetic image.
+- Creates JSON annotations for each synthetic image.
 - Writes one split file per step: `split_step1.json`, `split_step2.json`, ...
 
 Basic usage:
@@ -254,29 +254,27 @@ Basic usage:
 python json_adjuster.py \
  --input_split data/baseline_split.json \
  --output_split data/dataset/splits \
- --synthetic_images <Path to synthetic images> \
+ --synthetic_images <Path to synthetic images (instructions on how to generate these is below)> \
  --input_images data/dataset/final_patched_BTXRD \
  --output_images data/dataset/BTXRD_images_new \
  --input_annotations data/dataset/BTXRD/Annotations \
  --output_annotations data/dataset/BTXRD/Annotations_new
 ```
 
-Key arguments:
+Adjustable arguments:
 
-- `--input_split`: Base split JSON (must contain a `train` list), e.g. `data/baseline_split.json`.
 - `--output_split`: Output directory for incremental split files, e.g. `data/dataset/splits/` (one per step).
-- `--synthetic_images`: Root folder containing class subfolders of generated images (e.g. `<Path to synthetic images>`).
-- `--input_images`: Source folder with original images to copy (e.g. `data/dataset/final_patched_BTXRD`).
+- `--synthetic_images`: Root folder containing class subfolders of generated images
 - `--output_images`: Target folder for originals + synthetic images (e.g. `data/dataset/BTXRD_images_new`).
-- `--input_annotations`: Source folder with original JSON annotations to copy (e.g. `data/dataset/BTXRD/Annotations`).
 - `--output_annotations`: Target folder for originals + synthetic JSON annotations (e.g. `data/dataset/BTXRD/Annotations_new`).
 
 Outputs:
 
 - `data/dataset/splits/split_step*.json` with incrementally expanded `train` indices.
-- New synthetic images and JSON annotations alongside the originals.
+- New synthetic images and JSON annotations
 
 #### 2. Train with synthetic data
+
 You have to add trainwsyn argument to train with the specific step
 
 Basic usage:
@@ -288,11 +286,26 @@ python train.py \
 ```
 
 Key arguments:
+
 - `--trainwsyn`: Path to a synthetic split JSON (e.g. `data/dataset/splits/split_step3.json`). This selects which step’s augmented train indices are used.
 - `--run-name-prefix`: Prefix for the run/checkpoint name (e.g. `resnet_gan_15800`). The final run name includes this prefix plus a timestamp/settings.
 
-3. Test trained model
+#### 3. Test trained model
 
+```bash
+python test.py --run-name <RUN_NAME> [--architecture resnet34|resnet50|densenet121]
+```
+
+Arguments:
+
+- `--run-name` (required): Run/checkpoint folder name under `checkpoints/` and matching W&B display name.
+- `--architecture` (optional): Backbone used during training. Default is `resnet34`.
+
+Example:
+
+```bash
+python test.py --run-name resnet_gan_15800_wce_noaug_2026-02-12_14-30-00 --architecture resnet50
+```
 
 ## ✨ 1.Synthetic Generation (Stylegan2)
 
@@ -470,11 +483,77 @@ Notes:
 
 - `--class` is required when training with `--cond true`; class IDs come from `dataset.json`.
 - Repeat with different `--class` values to generate each tumor class or use the generate.sbatch file
-- For each class a minimum of 800 images should be generated for the execution of json-adjuster to    work.
+- For each class a minimum of 800 images should be generated for the execution of json-adjuster to work.
 
 ---
 
-## ✨ 2.Synthetic Generation (Custom Latent Diffusion)
+## ✨ 2.Synthetic Generation (Finetuned Stable Diffusion)
+
+Note: _Considering that the finetuning process is compute-intensive, the following instructions assume access to a slurm cluster._
+
+### 1. Generate dataset for training in Hugging Face format
+
+```bash
+python data/generate_hf_dataset.py
+```
+
+### 2. Clone [diffusers](https://github.com/huggingface/diffusers) and navigate to the cloned repository
+
+### 3. Setup diffusers virtual environment and install dependencies
+
+```bash
+python3 -m venv venv
+
+source venv/bin/activate  # On Linux/macOS
+# or
+venv\Scripts\activate     # On Windows
+
+pip install .
+```
+
+### 4. Move finetuning script to diffusers repository
+
+Place `finetuned_latent_diffusion/finetune_latent_diffusion.sh` in `examples/text_to_image` in the diffusers repository.
+
+### 5. Run finetuning script
+
+```bash
+bash finetune_latent_diffusion.sh [resolution] [lora_rank] [batch_size] [hf_dataset_path]
+```
+
+- **`resolution` is image resolution of generated images. We recommend to stick with 512, and downsample/upsample images if needed for downstream task.**
+- **`lora_rank` is the LoRA rank to use in finetuning. We recommend 16, 32 or 64.**
+- **`batch_size` is the batch size to use in finetuning. We recommend 4 or 8.**
+- **`hf_dataset_path` is the path to the dataset in the Hugging Face format you have previously generated. It is in this repository at `/data/dataset/hf_dataset`**
+
+Example:
+
+```bash
+bash finetune_latent_diffusion.sh 512 32 4 "../bone-tumour-classification/data/dataset/hf_dataset"
+```
+
+### 6. Generate synthetic images
+
+```bash
+sbatch generate_augmentation_images.sh <model_base> <lora_model_path> <num_images> <tumor_subtype> [use_detailed_prompt] [output_dir]
+```
+
+- **`model_base`**: Base diffusion model to use. Choices: `stable-diffusion` or `roentgen`.
+- **`lora_model_path`**: Path to the LoRA weights directory from finetuning. This is in `/diffusers/examples/text_to_image/`. You can also use a subfolder inside for a specific checkpoint.
+- **`num_images`**: Number of synthetic images to generate per tumor subtype.
+- **`tumor_subtype`**: Which tumor type to generate. Choices: `osteochondroma`, `osteosarcoma`, `multiple_osteochondromas`, `simple_bone_cyst`, `giant_cell_tumor`, `synovial_osteochondroma`, `osteofibroma`, or `all`.
+- **`use_detailed_prompt`** (optional): `true` or `false` (default: `false`). If `true`, randomly samples anatomical locations and views to create more varied prompts.
+- **`output_dir`** (optional): Custom output directory for generated images. This should be specified if you are using `all` as the tumor type, so that you can easily use the generated images for the classifier.
+
+Example:
+
+```bash
+sbatch generate_augmentation_images.sh stable-diffusion "../diffusers/examples/text_to_image/sd-1-5-lora-rank-64-batch-8-resolution-512-2026-02-11/checkpoint-10000" 800 all true generated_images
+```
+
+---
+
+## ✨ 3.Synthetic Generation (Custom Latent Diffusion)
 
 ### Autoencoder
 
@@ -520,7 +599,7 @@ python -m custom_latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run
 - **`<LDM_RUN_DIR>` is the directory of the diffusion train run, for example `train_ldm_2025-12-07_17-36-29`**
 - **`<CLASS_NAME>` is the name of the tumor subtype which you wish to sample for, for example `osteochondroma`**
 
-## ✨ 3.Synthetic Generation (New Custom Latent Diffusion)
+## ✨ 4.Synthetic Generation (New Custom Latent Diffusion)
 
 Work had been started on a new custom latent diffusion approach that uses the diffusers library in the `custom_latent_diffusion_new` folder. However, this remains work in progress and is not usable yet.
 
