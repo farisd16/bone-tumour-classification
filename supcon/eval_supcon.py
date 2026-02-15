@@ -27,7 +27,7 @@ from sklearn.metrics import (
     recall_score,
     balanced_accuracy_score,
 )
-from data.utils import display_confusion_matrix
+from utils import display_confusion_matrix
 
 
 

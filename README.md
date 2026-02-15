@@ -45,7 +45,7 @@ conda activate bone-tumour
 ```
 
 **Option 2: Using venv**
-
+x
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Linux/macOS
@@ -75,16 +75,26 @@ data/
       Annotations/    # JSON annotation files (same basenames as images)
 ```
 
-Optional folders created by scripts in this repo:
+(Optional) folders created by scripts in this repo:
 
 ```
 data/
   dataset/
-    final_patched_BTXRD/          # Extracted patches from annotations (created, this is the final dataset used for training and testing)
-    squared_padded/         # Padded originals for 106 special cases (created)
-    squared_patched_106/    # Patches from padded images (created)
-    patched_BTXRD_merged/   # Merge of the two patch sets (created)
+    final_patched_BTXRD/    # Extracted patches from annotations (created, this is the final dataset used for training and testing)
+    squared_padded/         # Padded originals for 106 special cases (created) (optional)
 ```
+
+### Data Validation & Debugging Utilities
+The following files were used to identify and resolve issues that occurred during the preprocessing of the BTXRD dataset. These validation and debugging scripts ensured data integrity and enabled the creation of the final `final_patched_BTXRD` dataset.
+- `bounding_box_checker.py`  
+  Adds the images, whose bounding box exceeds the original image size, to the csv file. Tells also whether the bounding box of that image
+  exceeds the image size
+- `bounding_box_visualization.py`  
+  Helps to visualize bounding boxes
+- `tumour_bounding_box.py`  
+  Function that computes a square bounding box (with optional margin) around all given tumour points.
+- `pad_unsquared.py`  
+  Creates the squared padded folder in the dataset folder, containing padded images with their pad info in the csv file
 
 ## 📊 Classification
 
@@ -212,17 +222,6 @@ Outputs:
 
 - `checkpoints_supcon/<time>/encoder_supcon.pth`
 - `checkpoints_linear/<time>/classifier.pth`
-
-### ℹ️ Notes
-
-- CSVs like `dataset_singlelabel.csv` are not required for training/testing in this pipeline; labels are taken from annotation JSONs.
-- If needed for analysis, you can generate a CSV aligned to patched images via:
-
-```bash
-python data/create_csv_patched.py
-```
-
----
 
 ## 🆕 1.Synthetic Generation (Latent Diffusion)
 

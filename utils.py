@@ -3,6 +3,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
+"""
+To display confusion matrix
+"""
+
 def display_confusion_matrix(all_labels, all_preds):
     # --- Confusion matrix ---
     cm = confusion_matrix(all_labels, all_preds)
