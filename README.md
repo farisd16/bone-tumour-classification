@@ -551,6 +551,74 @@ Example:
 sbatch generate_augmentation_images.sh stable-diffusion "../diffusers/examples/text_to_image/sd-1-5-lora-rank-64-batch-8-resolution-512-2026-02-11/checkpoint-10000" 800 all true generated_images
 ```
 
+### 7. Generate synthetic images for FID evaluation and compute FID
+
+To compute FID score for the diffusion models, first images need to be generated.
+
+```bash
+python generate_fid_samples.py \
+    --model_base "$MODEL_BASE" \
+    --lora_model_path "$LORA_MODEL_PATH" \
+    --output_dir "$OUTPUT_DIR" \
+    --n_samples "$N_SAMPLES"
+```
+- **`model_base`**: Base diffusion model to use.
+- **`lora_model_path`**: Path to the LoRA weights directory from finetuning.
+- **`output_dir`**: Custom output directory for generated images. 
+- **`n_samples`**: number of images to generate. 
+
+And then run `evaluate_fid.sh` pointing at the right folders with real and fake images. 
+
+```bash
+python -m pytorch_fid \
+  "$REAL_DIR" \
+  "$FAKE_DIR" \
+  --device cuda:0 \
+  --batch-size 32 \
+  --num-workers 0
+```
+- `REAL_DIR`: Flattened folder of real images.
+- `FAKE_DIR`: Flattened folder of generated images to evaluate.
+
+If needed, real images can be prepared and parsed by `prepare_real_samples.sh`.
+
+### 8. (ADDITIONAL) Compute LPIPS with diffusion images
+
+LPIPS computation is similar to that explained in `Metric Evaluation`. However, as images need to be organized in subfolders according to anatomical site and cancer subtype, here you can find two additional files to re-organize your generated images.
+
+- For real samples:
+```bash
+sbatch parse_real_images.sh
+```
+- For generated samples:
+```bash
+sbatch parse_diff_images.sh
+```
+
+And then compute LPIPS using:
+
+```bash
+python lpips_eval.py \
+  --real_root "${REAL_ROOT}" \
+  --gen_root "${GEN_ROOT}" \
+  ${CLASSES:+--classes ${CLASSES}} \
+  --pairs "${PAIRS}" \
+  --img_size "${IMG_SIZE}" \
+  --backbone "${BACKBONE}" \
+  --device "${DEVICE}" \
+  --seed "${SEED}"
+```
+Arguments:
+
+- `--real_root` (required): Root directory with real class subfolders.
+- `--gen_root` (required): Root directory with generated class subfolders.
+- `--classes` (optional): Explicit class list. If omitted, all classes under `real_root` are used.
+- `--pairs` (int, default: `10000`): Number of random image pairs per class.
+- `--img_size` (int, default: `256`): Resize target for LPIPS input.
+- `--backbone` (choice: `alex|vgg|squeeze`, default: `alex`): LPIPS backbone.
+- `--device` (default: auto): Device for evaluation (`cuda` if available, else `cpu`).
+- `--seed` (int, default: `0`): Random seed for pair sampling.
+
 ---
 
 ## ✨ 3.Synthetic Generation (Custom Latent Diffusion)
@@ -638,6 +706,8 @@ Output:
 
 - Per-class LPIPS mean/std for real and generated sets.
 - Macro average across classes.
+
+To run LPIPS script, images need to be in
 
 ### 2. FID evaluation (`finetuned_latent_diffusion/evaluate_fid.sh`)
 
