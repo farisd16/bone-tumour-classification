@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 import os
 import pandas as pd
-import argparse
 from tumour_bounding_box import bounding_box_creator
 
 
@@ -12,16 +11,6 @@ Unified script for extracting bounding-box patches
 from both normal and padded (106) BTXRD images.
 """
 
-# === Parse arguments ===
-parser = argparse.ArgumentParser(
-    description="Extract bounding box patches from BTXRD dataset"
-)
-parser.add_argument(
-    "--use-entire-dataset",
-    action="store_true",
-    help="Process all JSON files regardless of class label",
-)
-args = parser.parse_args()
 
 # === Paths ===
 base_dir = os.path.dirname(__file__)
@@ -30,7 +19,7 @@ image_folder = os.path.join(base_dir, "dataset", "BTXRD", "images")
 output_folder = os.path.join(
     base_dir,
     "dataset",
-    f"{'entire_' if args.use_entire_dataset else ''}final_patched_BTXRD",
+    "final_patched_BTXRD",
 )
 
 # Special 106 padded images
@@ -89,7 +78,7 @@ for json_name in json_files:
 
     H, W, _ = image.shape
     label = data["shapes"][0]["label"].lower()
-    if not args.use_entire_dataset and label not in classes:
+    if label not in classes:
         continue
 
     # --- Collect tumour points ---
