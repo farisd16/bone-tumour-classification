@@ -237,6 +237,63 @@ python supcon/<PIPELINE_SCRIPT_NAME>.py \
   --minority-classes <comma-separated-class-names>
 ```
 
+### How to train with synthetic images
+
+#### 1. Generate splits with synthetic data
+`json_adjuster.py` builds a series of training splits and corresponding annotations by mixing **synthetic images** into the original dataset. It:
+
+- Copies original images and annotations into the output dataset folders.
+- Samples synthetic images per class across multiple steps (see `STEPS` in the script).
+- Renames synthetic images to the canonical `IMG000000.ext` format.
+- Creates minimal JSON annotations for each synthetic image.
+- Writes one split file per step: `split_step1.json`, `split_step2.json`, ...
+
+Basic usage:
+
+```bash
+python json_adjuster.py \
+ --input_split data/baseline_split.json \
+ --output_split data/dataset/splits \
+ --synthetic_images <Path to synthetic images> \
+ --input_images data/dataset/final_patched_BTXRD \
+ --output_images data/dataset/BTXRD_images_new \
+ --input_annotations data/dataset/BTXRD/Annotations \
+ --output_annotations data/dataset/BTXRD/Annotations_new
+```
+
+Key arguments:
+
+- `--input_split`: Base split JSON (must contain a `train` list), e.g. `data/baseline_split.json`.
+- `--output_split`: Output directory for incremental split files, e.g. `data/dataset/splits/` (one per step).
+- `--synthetic_images`: Root folder containing class subfolders of generated images (e.g. `<Path to synthetic images>`).
+- `--input_images`: Source folder with original images to copy (e.g. `data/dataset/final_patched_BTXRD`).
+- `--output_images`: Target folder for originals + synthetic images (e.g. `data/dataset/BTXRD_images_new`).
+- `--input_annotations`: Source folder with original JSON annotations to copy (e.g. `data/dataset/BTXRD/Annotations`).
+- `--output_annotations`: Target folder for originals + synthetic JSON annotations (e.g. `data/dataset/BTXRD/Annotations_new`).
+
+Outputs:
+
+- `data/dataset/splits/split_step*.json` with incrementally expanded `train` indices.
+- New synthetic images and JSON annotations alongside the originals.
+
+#### 2. Train with synthetic data
+You have to add trainwsyn argument to train with the specific step
+
+Basic usage:
+
+```bash
+python train.py \
+    --trainwsyn <SYNTHETIC_SPLIT> \
+    --run-name-prefix <RUN_NAME_PREFIX>
+```
+
+Key arguments:
+- `--trainwsyn`: Path to a synthetic split JSON (e.g. `data/dataset/splits/split_step3.json`). This selects which step’s augmented train indices are used.
+- `--run-name-prefix`: Prefix for the run/checkpoint name (e.g. `resnet_gan_15800`). The final run name includes this prefix plus a timestamp/settings.
+
+3. Test trained model
+
+
 ## ✨ 1.Synthetic Generation (Stylegan2)
 
 ### 1. Clone [stylegan2-ada-pytorch](https://github.com/philippw23/stylegan2-ada-pytorch)
@@ -350,39 +407,34 @@ Arguments:
 - `--outdir` (required): Output directory for training runs.
 - `--data` (required): Training dataset path (directory or zip).
 - `--gpus` (int, default: `1`): Number of GPUs (power of two).
-- `--snap` (int, default: `50`): Snapshot interval in ticks.
-- `--metrics` (default: `fid50k_full`): Comma-separated metric list or `none`.
-- `--seed` (int, default: `0`): Random seed.
-- `-n`, `--dry-run` (flag): Print config and exit without training.
-- `--cond` (bool, default: `false`): Enable conditional training from labels in `dataset.json`.
-- `--subset` (int, optional): Train on only N images.
-- `--mirror` (bool, default: `false`): Enable horizontal flips.
-- `--cfg` (choice: `auto|stylegan2|paper256|paper512|paper1024|cifar`, default: `auto`): Base configuration.
-- `--gamma` (float, optional): Override R1 gamma.
-- `--kimg` (int, optional): Override training duration.
 - `--batch` (int, optional): Override batch size.
+- `--gamma` (float, optional): Override R1 gamma.
+- `--cond` (bool, default: `false`): Enable conditional training from labels in `dataset.json`.
+- `--mirror` (bool, default: `false`): Enable horizontal flips.
 - `--aug` (choice: `noaug|ada|fixed`, default: `ada`): Augmentation mode.
-- `--p` (float, optional): Augmentation probability, only for `--aug=fixed`.
-- `--target` (float, optional): ADA target, only for `--aug=ada`.
-- `--augpipe` (choice: `blit|geom|color|filter|noise|cutout|bg|bgc|bgcf|bgcfn|bgcfnc`, default: `bgc`): Augmentation pipeline.
+- `--cfg` (choice: `auto|stylegan2|paper256|paper512|paper1024|cifar`, default: `auto`): Base configuration.
+- `--snap` (int, default: `50`): Snapshot interval in ticks.
 - `--resume` (default: `noresume`): Resume from pickle or predefined source.
-- `--freezed` (int, default: `0`): Number of frozen discriminator layers.
-- `--fp32` (bool, default: `false`): Disable mixed precision.
-- `--nhwc` (bool, default: `false`): Use NHWC layout with FP16.
-- `--nobench` (bool, default: `false`): Disable cuDNN benchmarking.
-- `--allow-tf32` (bool, default: `false`): Allow TF32 in PyTorch ops.
-- `--workers` (int, default: `3`): DataLoader worker count.
+- `--kimg` (int, optional): Override training duration.
+- `--seed` (int, default: `0`): Random seed.
+- `--metrics` (default: `fid50k_full`): Comma-separated metric list or `none`.
 
 Example:
 
 ```bash
 python train.py \
-  --outdir training-runs \
-  --data data/btxrd_corrected_dataset.zip \
-  --gpus 1 \
-  --cfg auto \
-  --cond true \
-  --snap 10
+  --outdir=/checkpoints/stylegan2ada_cond_train \
+  --data=./data/btxrd_train_dataset.zip \
+  --gpus=1 \
+  --batch=16 \
+  --gamma=6 \
+  --cond=1 \
+  --mirror=1 \
+  --aug=ada \
+  --cfg=auto \
+  --snap=50 \
+  --seed=42 \
+  --metrics=fid50k_full
 ```
 
 ### 6. Generate synthetic images
@@ -409,15 +461,16 @@ Example:
 python generate.py \
   --outdir out/btxrd_samples \
   --trunc 0.7 \
-  --seeds 0-199 \
+  --seeds 0-799 \
   --class 0 \
-  --network training-runs/<RUN_DIR>/network-snapshot-020000.pkl
+  --network training-runs/stylegan2ada_cond_train/00000-btxrd_train_anatomical_dataset-cond-mirror-auto1-gamma6-batch16-ada/network-snapshot-020000.pkl
 ```
 
 Notes:
 
 - `--class` is required when training with `--cond true`; class IDs come from `dataset.json`.
-- Repeat with different `--class` values to generate each tumor class.
+- Repeat with different `--class` values to generate each tumor class or use the generate.sbatch file
+- For each class a minimum of 800 images should be generated for the execution of json-adjuster to    work.
 
 ---
 
