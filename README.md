@@ -235,6 +235,7 @@ python supcon/<PIPELINE_SCRIPT_NAME>.py \
   --linear-epochs <int> \
   --apply-minority-aug <true/false> \
   --minority-classes <comma-separated-class-names>
+```
 
 
 ## 🆕 1.Synthetic Generation (Latent Diffusion)
