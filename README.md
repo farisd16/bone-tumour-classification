@@ -40,8 +40,8 @@ First, create and activate a virtual environment:
 **Option 1: Using Conda**
 
 ```bash
-conda create -n bone-tumour python=3.12
-conda activate bone-tumour
+conda create -n bone-tumour-classification python=3.12
+conda activate bone-tumour-classification
 ```
 
 **Option 2: Using venv**
@@ -85,6 +85,7 @@ data/
 ```
 
 ### Data Validation & Debugging Utilities
+
 The following files were used to identify and resolve issues that occurred during the preprocessing of the BTXRD dataset. These validation and debugging scripts ensured data integrity and enabled the creation of the final `final_patched_BTXRD` dataset.
 - `bounding_box_checker.py`  
   Adds the images, whose bounding box exceeds the original image size, to the csv file. Tells also whether the bounding box of that image

@@ -162,7 +162,7 @@ def main():
     ap.add_argument(
         "--input_split",
         type=Path,
-        default="data/dataset/splits/dataset_split_final.json",
+        default="data/baseline_split.json",
         help="split.json input",
     )
     ap.add_argument(
