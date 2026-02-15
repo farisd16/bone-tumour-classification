@@ -46,6 +46,7 @@ conda activate bone-tumour-classification
 
 **Option 2: Using venv**
 x
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Linux/macOS
@@ -87,6 +88,7 @@ data/
 ### Data Validation & Debugging Utilities
 
 The following files were used to identify and resolve issues that occurred during the preprocessing of the BTXRD dataset. These validation and debugging scripts ensured data integrity and enabled the creation of the final `final_patched_BTXRD` dataset.
+
 - `bounding_box_checker.py`  
   Adds the images, whose bounding box exceeds the original image size, to the csv file. Tells also whether the bounding box of that image
   exceeds the image size
@@ -239,53 +241,13 @@ python supcon/<PIPELINE_SCRIPT_NAME>.py \
 
 ### Autoencoder
 
-#### 1. Train the autoencoder
-
-```
-python -m latent_diffusion.vae.train
-```
-
-#### 2. Test the autoencoder (Optional)
-
-```
-python -m latent_diffusion.vae.train --run-name <RUN_NAME>
-```
-
-#### 3. Sample from the autoencoder (Optional)
-
-```
-python -m latent_diffusion.vae.sample --run-name <RUN_NAME>
-```
-
----
-
-**`<RUN_DIR>` is the directory of the run which you want to test, for example `train_vae_2025-12-07_17-36-29`**
-
-### Diffusion Model
-
-#### Train the diffusion model using a latent space provided by a VAE.
-
-```
-python -m latent_diffusion.diffusion.train --run-name <RUN_NAME>
-```
-
-**`<RUN_DIR>` is the directory of the VAE train run, for example `train_vae_2025-12-07_17-36-29`**
-
-### Sample
-
-```
-python -m latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run-name <LDM_RUN_NAME> --class-name <CLASS_NAME>
-```
-
-- **`<VAE_RUN_DIR>` is the directory of the VAE train run, for example `train_vae_2025-12-07_17-36-29`**
-- **`<LDM_RUN_DIR>` is the directory of the diffusion train run, for example `train_ldm_2025-12-07_17-36-29`**
-- **`<CLASS_NAME>` is the name of the tumor subtype which you wish to sample for, for example `osteochondroma`**
+Work in progress
 
 ## 🆕 2.Synthetic Generation (Stylegan2)
 
-Run the following from `stylegan2-ada-pytorch/` (not from this repo root).
+### 1. Clone [stylegan2-ada-pytorch](https://github.com/philippw23/stylegan2-ada-pytorch)
 
-### 1. Move data into StyleGAN repo
+### 2. Move data into StyleGAN repo
 
 Place these folders under `stylegan2-ada-pytorch/data/dataset/`:
 
@@ -305,7 +267,7 @@ stylegan2-ada-pytorch/
       dataset_split.json
 ```
 
-### 2. Preprocess and create class-sorted 256x256 dataset
+### 3. Preprocess and create class-sorted 256x256 dataset
 
 ```bash
 python data/style_gan_preprocessing.py [arguments]
@@ -343,7 +305,7 @@ python data/style_gan_preprocessing.py \
   --use-anatomical-location
 ```
 
-### 3. Build index-to-filename map from original patched dataset
+### 4. Build index-to-filename map from original patched dataset
 
 ```bash
 python data/build_final_patched_index_map.py [arguments]
@@ -367,7 +329,7 @@ python data/build_final_patched_index_map.py \
 `build_final_patched_index_map.py` is needed because split files contain integer indices, not filenames.  
 It creates `index -> IMGxxxx.jpeg` mapping using the original `final_patched_BTXRD` ordering so split indices can be matched to resized/sorted files.
 
-### 4. Keep only train split in the resized dataset
+### 5. Keep only train split in the resized dataset
 
 ```bash
 python data/correct_split_new.py [arguments]
@@ -390,7 +352,7 @@ python data/correct_split_new.py \
   --dry-run
 ```
 
-### 5. Pack dataset for StyleGAN2-ADA
+### 6. Pack dataset for StyleGAN2-ADA
 
 ```bash
 python data/dataset_tool.py [arguments]
@@ -415,7 +377,7 @@ python data/dataset_tool.py \
   --width 256 --height 256 --resize-filter box
 ```
 
-### 6. Train StyleGAN2-ADA
+### 7. Train StyleGAN2-ADA
 
 ```bash
 python train.py [arguments]
@@ -461,7 +423,7 @@ python train.py \
   --snap 10
 ```
 
-### 7. Generate synthetic images
+### 8. Generate synthetic images
 
 After training, pick a snapshot from `training-runs/.../network-snapshot-xxxxxx.pkl` and sample images:
 
@@ -497,12 +459,62 @@ Notes:
 
 ---
 
+## 🆕 3.Synthetic Generation (Custom Latent Diffusion)
+
+### Autoencoder
+
+#### 1. Train the autoencoder
+
+```
+python -m custom_latent_diffusion.vae.train
+```
+
+#### 2. Test the autoencoder (Optional)
+
+```
+python -m custom_latent_diffusion.vae.train --run-name <RUN_NAME>
+```
+
+#### 3. Sample from the autoencoder (Optional)
+
+```
+python -m custom_latent_diffusion.vae.sample --run-name <RUN_NAME>
+```
+
+---
+
+**`<RUN_DIR>` is the directory of the run which you want to test, for example `train_vae_2025-12-07_17-36-29`**
+
+### Diffusion Model
+
+#### Train the diffusion model using a latent space provided by a VAE.
+
+```
+python -m custom_latent_diffusion.diffusion.train --run-name <RUN_NAME>
+```
+
+**`<RUN_DIR>` is the directory of the VAE train run, for example `train_vae_2025-12-07_17-36-29`**
+
+### Sample
+
+```
+python -m custom_latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run-name <LDM_RUN_NAME> --class-name <CLASS_NAME>
+```
+
+- **`<VAE_RUN_DIR>` is the directory of the VAE train run, for example `train_vae_2025-12-07_17-36-29`**
+- **`<LDM_RUN_DIR>` is the directory of the diffusion train run, for example `train_ldm_2025-12-07_17-36-29`**
+- **`<CLASS_NAME>` is the name of the tumor subtype which you wish to sample for, for example `osteochondroma`**
+
+## 🆕 4.Synthetic Generation (New Custom Latent Diffusion)
+
+Work had been started on a new custom latent diffusion approach that uses the diffusers library in the `custom_latent_diffusion_new` folder. However, this remains work in progress and is not usable yet.
+
 ## 📏 Metric Evaluation for Image Generation
 
 This repo provides two complementary metrics to assess generated image quality and diversity:
 
 - **LPIPS (intra-class diversity):** `lpips_eval.py`
-- **FID (distribution distance real vs. generated):** `latent_diffusion_finetuned/evaluate_fid.sh`
+- **FID (distribution distance real vs. generated):** `finetuned_latent_diffusion/evaluate_fid.sh`
 
 ### 1. LPIPS evaluation (`lpips_eval.py`)
 
@@ -533,15 +545,15 @@ Output:
 - Per-class LPIPS mean/std for real and generated sets.
 - Macro average across classes.
 
-### 2. FID evaluation (`latent_diffusion_finetuned/evaluate_fid.sh`)
+### 2. FID evaluation (`finetuned_latent_diffusion/evaluate_fid.sh`)
 
 The SLURM script computes FID with `pytorch-fid`:
 
 ```bash
-sbatch latent_diffusion_finetuned/evaluate_fid.sh
+sbatch finetuned_latent_diffusion/evaluate_fid.sh
 ```
 
-Before running, edit these variables in `latent_diffusion_finetuned/evaluate_fid.sh`:
+Before running, edit these variables in `finetuned_latent_diffusion/evaluate_fid.sh`:
 
 - `REAL_DIR`: Flattened folder of real images.
 - `FAKE_DIR`: Flattened folder of generated images to evaluate.
