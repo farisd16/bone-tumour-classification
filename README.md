@@ -177,46 +177,24 @@ python test.py --run-name resnet_gan_15800_wce_noaug_2026-02-12_14-30-00 --archi
 python supcon/train_supcon.py
 ```
 
-Arguments:
-
-- No CLI arguments are currently implemented in `supcon/train_supcon.py`.
-
-Example:
-
-```bash
-python supcon/train_supcon.py
-```
-
 2. Linear classifier training
 
 ```bash
-python supcon/train_linear.py
-```
-
-Arguments:
-
-- No CLI arguments are currently implemented in `supcon/train_linear.py`.
-
-Example:
-
-```bash
-python supcon/train_linear.py
+python supcon/train_linear.py \
+  --encoder-path checkpoints_supcon/<run_timestamp>/encoder_supcon.pth \
+  --split-path checkpoints_supcon/<run_timestamp>/split.json \
+  --dataset-dir data/dataset
 ```
 
 3. Evaluation
 
 ```bash
-python supcon/eval_supcon.py
-```
-
-Arguments:
-
-- No CLI arguments are currently implemented in `supcon/eval_supcon.py`.
-
-Example:
-
-```bash
-python supcon/eval_supcon.py
+python supcon/eval_supcon.py \
+  --encoder-path checkpoints_supcon/<run_timestamp>/encoder_supcon.pth \
+  --classifier-path checkpoints_linear/<run_timestamp>/classifier.pth \
+  --split-path checkpoints_supcon/<run_timestamp>/split.json \
+  --dataset-dir data/dataset \
+  --wandb
 ```
 
 Outputs:
