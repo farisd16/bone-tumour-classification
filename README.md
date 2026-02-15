@@ -202,6 +202,39 @@ Outputs:
 - `checkpoints_supcon/<time>/encoder_supcon.pth`
 - `checkpoints_linear/<time>/classifier.pth`
 
+---
+
+### 🔄 Optional: All-in-One SupCon + Linear Evaluation (W&B Pipeline)
+
+In addition to the separate training scripts, the repository provides a single
+pipeline script that performs:
+
+1. Supervised Contrastive (SupCon) pretraining  
+2. Linear classifier training  
+3. Validation and test evaluation  
+4. Logging to Weights & Biases (W&B)  
+5. Saving model checkpoints and split information  
+
+---
+
+#### ▶ Run the full pipeline (default configuration)
+
+```bash
+python supcon/<PIPELINE_SCRIPT_NAME>.py \
+  --run-name-prefix <name> \
+  --random-state <int> \
+  --test-size <float> \
+  --val-size <float> \
+  --temperature <float> \
+  --feature-dim <int> \
+  --supcon-lr <float> \
+  --supcon-epochs <int> \
+  --linear-lr <float> \
+  --linear-epochs <int> \
+  --apply-minority-aug <true/false> \
+  --minority-classes <comma-separated-class-names>
+
+
 ## 🆕 1.Synthetic Generation (Latent Diffusion)
 
 ### Autoencoder
