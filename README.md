@@ -237,14 +237,7 @@ python supcon/<PIPELINE_SCRIPT_NAME>.py \
   --minority-classes <comma-separated-class-names>
 ```
 
-
-## 🆕 1.Synthetic Generation (Latent Diffusion)
-
-### Autoencoder
-
-Work in progress
-
-## 🆕 2.Synthetic Generation (Stylegan2)
+## 🆕 1.Synthetic Generation (Stylegan2)
 
 ### 1. Clone [stylegan2-ada-pytorch](https://github.com/philippw23/stylegan2-ada-pytorch)
 
@@ -268,92 +261,60 @@ stylegan2-ada-pytorch/
       dataset_split.json
 ```
 
-### 3. Preprocess and create class-sorted 256x256 dataset
+### 3. Preprocess (single script call)
+
+The full BTXRD preprocessing pipeline is now handled by one script call via
+`style_gan_preprocessing.py full-pipeline` (resize/sort, index-map creation,
+and train-split correction).
 
 ```bash
-python data/style_gan_preprocessing.py [arguments]
+python data/style_gan_preprocessing.py full-pipeline [arguments]
 ```
 
 Arguments:
 
-- `--image-dir` (path, default: `data/dataset/final_patched_BTXRD`): Input image directory.
-- `--json-dir` (path, default: `data/dataset/BTXRD/Annotations`): JSON annotation directory.
-- `--output-dir` (path, default: `data/dataset/BTXRD_resized_sorted_with_anatomical_location`): Output directory.
-- `--target-size` (int, default: `256`): Output square size.
-- `--center-crop` (flag): Center-crop to square before resize.
-- `--no-dataset-json` (flag): Skip writing `dataset.json`.
-- `--use-anatomical-location` (flag): Prefix class label with anatomical location (`upper limb`, `lower limb`, `pelvis`) to create 21 classes.
-- `--xlsx-path` (path, default: `data/dataset/BTXRD/dataset.xlsx`): Metadata file used with `--use-anatomical-location`.
+- `--image-dir` (path, default: `data/dataset/final_patched_BTXRD`): Input image directory for preprocessing.
+- `--json-dir` (path, default: `data/dataset/BTXRD/Annotations`): Directory with BTXRD annotation JSON files.
+- `--preprocess-output-dir` (path, default: `data/dataset/BTXRD_resized_sorted_with_anatomical_location`): Output directory for resized and class-sorted images.
+- `--target-size` (int, default: `256`): Output square image size.
+- `--center-crop` (flag): Center-crop images to square before resize.
+- `--no-dataset-json` (flag): Skip writing `dataset.json` during preprocess step.
+- `--use-anatomical-location` (flag): Prefix tumor labels with anatomical location to create 21 classes.
+- `--xlsx-path` (path, default: `data/dataset/BTXRD/dataset.xlsx`): Path to metadata XLSX used when `--use-anatomical-location` is set.
+- `--split-path` (path, default: `data/dataset/dataset_split.json`): Split JSON used to build index map and keep only train images.
+- `--index-map-dataset-dir` (path, default: `data/dataset/final_patched_BTXRD`): Directory used to build the index-to-filename map.
+- `--index-map-output-path` (path, default: `data/dataset/final_patched_index_map.json`): Output JSON path for the generated index map.
+- `--correct-split-dataset-dir` (path, default: `--preprocess-output-dir`): Directory to apply train-split filtering on.
+- `--dry-run` (flag): Preview split correction without deleting files or rewriting `dataset.json`.
 
 Example:
 
 ```bash
-python data/style_gan_preprocessing.py \
+python data/style_gan_preprocessing.py full-pipeline \
   --image-dir data/dataset/final_patched_BTXRD \
   --json-dir data/dataset/BTXRD/Annotations \
-  --output-dir data/dataset/BTXRD_resized_sorted \
-  --target-size 256
-```
-
-Example (21 classes with anatomical prefix):
-
-```bash
-python data/style_gan_preprocessing.py \
-  --image-dir data/dataset/final_patched_BTXRD \
-  --json-dir data/dataset/BTXRD/Annotations \
-  --output-dir data/dataset/BTXRD_resized_sorted_with_anatomical_location \
+  --preprocess-output-dir data/dataset/BTXRD_resized_sorted \
   --target-size 256 \
-  --use-anatomical-location
-```
-
-### 4. Build index-to-filename map from original patched dataset
-
-```bash
-python data/build_final_patched_index_map.py [arguments]
-```
-
-Arguments:
-
-- `--split-path` (path, default: `data/dataset/dataset_split.json`): Split JSON containing `train` and `test` indices.
-- `--dataset-dir` (path, default: `data/dataset/final_patched_BTXRD`): Directory with `.jpeg` files in the original ordering.
-- `--output-path` (path, default: `data/dataset/final_patched_index_map.json`): Output index-to-filename map.
-
-Example:
-
-```bash
-python data/build_final_patched_index_map.py \
   --split-path data/dataset/dataset_split.json \
-  --dataset-dir data/dataset/final_patched_BTXRD \
-  --output-path data/dataset/final_patched_index_map.json
+  --index-map-dataset-dir data/dataset/final_patched_BTXRD \
+  --index-map-output-path data/dataset/final_patched_index_map.json \
+  --correct-split-dataset-dir data/dataset/BTXRD_resized_sorted
 ```
 
-`build_final_patched_index_map.py` is needed because split files contain integer indices, not filenames.  
-It creates `index -> IMGxxxx.jpeg` mapping using the original `final_patched_BTXRD` ordering so split indices can be matched to resized/sorted files.
+Other available subcommands:
 
-### 5. Keep only train split in the resized dataset
+- `preprocess`: Only resize/sort images and optionally write `dataset.json`.
+- `build-index-map`: Only create `final_patched_index_map.json` from split indices.
+- `correct-split`: Only filter the resized dataset to the train split and rewrite `dataset.json`.
 
 ```bash
-python data/correct_split_new.py [arguments]
+python data/style_gan_preprocessing.py preprocess --help
+python data/style_gan_preprocessing.py build-index-map --help
+python data/style_gan_preprocessing.py correct-split --help
+python data/style_gan_preprocessing.py full-pipeline --help
 ```
 
-Arguments:
-
-- `--split-path` (path, default: `data/dataset/dataset_split.json`): Split JSON (uses only `train` indices).
-- `--dataset-dir` (path, default: `data/dataset/BTXRD_resized_sorted`): Resized class-sorted dataset directory.
-- `--index-map` (path, default: `data/dataset/final_patched_index_map.json`): Index-to-filename mapping JSON.
-- `--dry-run` (flag): Preview removals without deleting files or rewriting `dataset.json`.
-
-Example:
-
-```bash
-python data/correct_split_new.py \
-  --split-path data/dataset/dataset_split.json \
-  --dataset-dir data/dataset/BTXRD_resized_sorted \
-  --index-map data/dataset/final_patched_index_map.json \
-  --dry-run
-```
-
-### 6. Pack dataset for StyleGAN2-ADA
+### 4. Pack dataset for StyleGAN2-ADA
 
 ```bash
 python data/dataset_tool.py [arguments]
@@ -378,7 +339,7 @@ python data/dataset_tool.py \
   --width 256 --height 256 --resize-filter box
 ```
 
-### 7. Train StyleGAN2-ADA
+### 5. Train StyleGAN2-ADA
 
 ```bash
 python train.py [arguments]
@@ -424,7 +385,7 @@ python train.py \
   --snap 10
 ```
 
-### 8. Generate synthetic images
+### 6. Generate synthetic images
 
 After training, pick a snapshot from `training-runs/.../network-snapshot-xxxxxx.pkl` and sample images:
 
@@ -460,7 +421,7 @@ Notes:
 
 ---
 
-## 🆕 3.Synthetic Generation (Custom Latent Diffusion)
+## 🆕 2.Synthetic Generation (Custom Latent Diffusion)
 
 ### Autoencoder
 
@@ -506,7 +467,7 @@ python -m custom_latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run
 - **`<LDM_RUN_DIR>` is the directory of the diffusion train run, for example `train_ldm_2025-12-07_17-36-29`**
 - **`<CLASS_NAME>` is the name of the tumor subtype which you wish to sample for, for example `osteochondroma`**
 
-## 🆕 4.Synthetic Generation (New Custom Latent Diffusion)
+## 🆕 3.Synthetic Generation (New Custom Latent Diffusion)
 
 Work had been started on a new custom latent diffusion approach that uses the diffusers library in the `custom_latent_diffusion_new` folder. However, this remains work in progress and is not usable yet.
 
