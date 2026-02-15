@@ -237,7 +237,7 @@ python supcon/<PIPELINE_SCRIPT_NAME>.py \
   --minority-classes <comma-separated-class-names>
 ```
 
-## 🆕 1.Synthetic Generation (Stylegan2)
+## ✨ 1.Synthetic Generation (Stylegan2)
 
 ### 1. Clone [stylegan2-ada-pytorch](https://github.com/philippw23/stylegan2-ada-pytorch)
 
@@ -421,7 +421,7 @@ Notes:
 
 ---
 
-## 🆕 2.Synthetic Generation (Custom Latent Diffusion)
+## ✨ 2.Synthetic Generation (Custom Latent Diffusion)
 
 ### Autoencoder
 
@@ -467,7 +467,7 @@ python -m custom_latent_diffusion.sample --vae-run-name <VAE_RUN_NAME> --ldm-run
 - **`<LDM_RUN_DIR>` is the directory of the diffusion train run, for example `train_ldm_2025-12-07_17-36-29`**
 - **`<CLASS_NAME>` is the name of the tumor subtype which you wish to sample for, for example `osteochondroma`**
 
-## 🆕 3.Synthetic Generation (New Custom Latent Diffusion)
+## ✨ 3.Synthetic Generation (New Custom Latent Diffusion)
 
 Work had been started on a new custom latent diffusion approach that uses the diffusers library in the `custom_latent_diffusion_new` folder. However, this remains work in progress and is not usable yet.
 
