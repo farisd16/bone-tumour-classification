@@ -261,9 +261,9 @@ stylegan2-ada-pytorch/
       dataset_split.json
 ```
 
-### 3. Preprocess (single script call)
+### 3. Preprocess
 
-The full BTXRD preprocessing pipeline is now handled by one script call via
+The full BTXRD preprocessing pipeline is handled by one script call via
 `style_gan_preprocessing.py full-pipeline` (resize/sort, index-map creation,
 and train-split correction).
 
