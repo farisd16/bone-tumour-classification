@@ -210,9 +210,9 @@ Work in progress
 
 ## 🆕 2.Synthetic Generation (Stylegan2)
 
-Clone [stylegan2-ada-pytorch](https://github.com/NVlabs/stylegan2-ada-pytorch) and run the following from the folder of the cloned repository.
+### 1. Clone [stylegan2-ada-pytorch](https://github.com/philippw23/stylegan2-ada-pytorch)
 
-### 1. Move data into StyleGAN repo
+### 2. Move data into StyleGAN repo
 
 Place these folders under `stylegan2-ada-pytorch/data/dataset/`:
 
@@ -232,7 +232,7 @@ stylegan2-ada-pytorch/
       dataset_split.json
 ```
 
-### 2. Preprocess and create class-sorted 256x256 dataset
+### 3. Preprocess and create class-sorted 256x256 dataset
 
 ```bash
 python data/style_gan_preprocessing.py [arguments]
@@ -270,7 +270,7 @@ python data/style_gan_preprocessing.py \
   --use-anatomical-location
 ```
 
-### 3. Build index-to-filename map from original patched dataset
+### 4. Build index-to-filename map from original patched dataset
 
 ```bash
 python data/build_final_patched_index_map.py [arguments]
@@ -294,7 +294,7 @@ python data/build_final_patched_index_map.py \
 `build_final_patched_index_map.py` is needed because split files contain integer indices, not filenames.  
 It creates `index -> IMGxxxx.jpeg` mapping using the original `final_patched_BTXRD` ordering so split indices can be matched to resized/sorted files.
 
-### 4. Keep only train split in the resized dataset
+### 5. Keep only train split in the resized dataset
 
 ```bash
 python data/correct_split_new.py [arguments]
@@ -317,7 +317,7 @@ python data/correct_split_new.py \
   --dry-run
 ```
 
-### 5. Pack dataset for StyleGAN2-ADA
+### 6. Pack dataset for StyleGAN2-ADA
 
 ```bash
 python data/dataset_tool.py [arguments]
@@ -342,7 +342,7 @@ python data/dataset_tool.py \
   --width 256 --height 256 --resize-filter box
 ```
 
-### 6. Train StyleGAN2-ADA
+### 7. Train StyleGAN2-ADA
 
 ```bash
 python train.py [arguments]
@@ -388,7 +388,7 @@ python train.py \
   --snap 10
 ```
 
-### 7. Generate synthetic images
+### 8. Generate synthetic images
 
 After training, pick a snapshot from `training-runs/.../network-snapshot-xxxxxx.pkl` and sample images:
 
