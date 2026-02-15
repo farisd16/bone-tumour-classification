@@ -25,7 +25,7 @@ cd "${REPO_DIR}"
 mkdir -p "${REPO_DIR}/logs"
 
 # Required inputs (override via: sbatch --export=ALL,INPUT_SPLIT=...,SYNTHETIC_IMAGES=...)
-INPUT_SPLIT="${INPUT_SPLIT:-data/dataset/splits/dataset_split_final.json}"
+INPUT_SPLIT="${INPUT_SPLIT:-data/baseline_split.json}"
 SYNTHETIC_IMAGES="${SYNTHETIC_IMAGES:-generated_images_15800}"
 
 # Optional inputs

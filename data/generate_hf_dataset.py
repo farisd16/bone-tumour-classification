@@ -31,7 +31,7 @@ parser.add_argument(
 parser.add_argument(
     "--split-path",
     type=str,
-    default="./data/dataset/splits/dataset_split_final.json",
+    default="./data/baseline_split.json",
     help="Path to JSON file containing split indices (with 'train', 'val', 'test' keys)",
 )
 parser.add_argument(
